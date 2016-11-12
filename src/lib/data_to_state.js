@@ -1,8 +1,6 @@
 'use strict'
 
-module.exports = toFloormanFormat
-
-function toFloormanFormat ({ website, meta, record }) {
+export default function dataToState ({ website, meta, record }) {
   const globalFields = website.fieldKeys
     .reduce(
       (fields, key) =>

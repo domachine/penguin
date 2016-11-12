@@ -16,8 +16,8 @@ const createPugEngine = require('../lib/pug_engine')
 process.on('unhandledRejection', err => { throw err })
 
 const engines = {
-  html: () => createDustEngine(),
-  pug: () => createPugEngine()
+  html: createDustEngine,
+  pug: createPugEngine
 }
 
 const args = minimist(process.argv.slice(2))
@@ -27,11 +27,11 @@ const env = Object.assign({}, process.env, {
   NODE_ENV: 'production',
   BABEL_ENV: 'production'
 })
-const render = engines[viewEngine]()
+const render = engines[viewEngine]({ assetPrefix: '' })
 mkdir('-p', prefix)
 const opts = { stdio: ['ignore', 'pipe', 'inherit'], env }
-spawn(`${__dirname}/build_renderer.js`, [], opts)
-  .stdout.pipe(fs.createWriteStream(join(prefix, 'renderer.js')))
+spawn(`${__dirname}/build_server_renderer.js`, [], opts)
+  .stdout.pipe(fs.createWriteStream(join(prefix, 'server_renderer.js')))
 const files = glob.sync('@(objects|pages)/**/*.' + viewEngine)
 Promise.all(
   files.map(file => {
@@ -40,9 +40,14 @@ Promise.all(
     return new Promise((resolve, reject) => {
       mkdirp(dirname(output), err => {
         if (err) return reject(err)
-        resolve(render(name, output))
+        resolve(render(name))
       })
     })
+    .then(content =>
+      new Promise((resolve, reject) => {
+        fs.writeFile(output, content, err => err ? reject(err) : resolve())
+      })
+    )
   })
 )
 if (fs.existsSync('static')) cp('-R', 'static', prefix)

@@ -2,14 +2,11 @@
 
 'use strict'
 
-const fs = require('fs')
 const browserify = require('browserify')
 const str = require('string-to-stream')
 const babel = require('babel-core')
 
 const pkg = require('../package.json')
-
-const output = 'pack/renderer.js'
 
 browserify(str(js(pkg)), { basedir: process.cwd(), detectGlobals: false, browserField: false })
   .transform('babelify', {
@@ -17,14 +14,12 @@ browserify(str(js(pkg)), { basedir: process.cwd(), detectGlobals: false, browser
     plugins: ['transform-es2015-modules-commonjs']
   })
   .transform('envify', { _: 'purge' })
-  .bundle()
-  .pipe(fs.createWriteStream(output))
-  .on('finish', () => {
+  .bundle((err, content) => {
+    if (err) throw err
     const opts = { presets: ['babili'], comments: false }
-    babel.transformFile(output, opts, (err, res) => {
-      if (err) throw err
-      fs.writeFileSync(output, res.code)
-    })
+    const res = babel.transform(content, opts)
+    if (err) throw err
+    console.log(res.code)
   })
 
 function js ({ name }) {

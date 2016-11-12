@@ -23,7 +23,7 @@ const templatePrefix = args['template-prefix'] || args.p || 'pack'
 const databasePrefix = args['data-prefix'] || args.d || 'data'
 const output = args.output || args.o || 'dist'
 
-const scriptPath = join(templatePrefix, 'renderer.js')
+const scriptPath = join(templatePrefix, 'server_renderer.js')
 const script = new Script(fs.readFileSync(scriptPath, 'utf-8'))
 const database = createDatabase({ prefix: databasePrefix })
 const templateManager = createTemplateManager({ prefix: templatePrefix })

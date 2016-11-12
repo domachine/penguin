@@ -7,3 +7,4 @@
 /reducers/*
 /selectors.js
 /selectors/*
+/lib/data_to_state.js
