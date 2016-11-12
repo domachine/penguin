@@ -3,8 +3,20 @@
   "version": "0.0.0",
   "description": "",
   "main": "index.js",
+  "bin": {
+    "penguin": "bin/penguin.js"
+  },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "watch": "scripts/watch.js",
+    "build": "scripts/build.js",
+    "test": "ava"
+  },
+  "ava": {
+    "files": [
+      "src/*_test.js",
+      "lib/*_test.js",
+      "bin/*_test.js"
+    ]
   },
   "keywords": [],
   "author": "",
@@ -33,6 +45,9 @@
     "string-to-stream": "^1.1.0"
   },
   "devDependencies": {
+    "ava": "^0.16.0",
+    "babel-cli": "^6.18.0",
+    "sinon": "^1.17.6",
     "standard": "^8.5.0"
   }
 }

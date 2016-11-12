@@ -11,13 +11,10 @@ const glob = require('glob')
 const mkdirp = require('mkdirp')
 const { cp, mkdir, rm } = require('shelljs')
 const minimist = require('minimist')
-const { createStore, combineReducers } = require('redux')
-const { map: reducers } = require('@webdesignio/floorman/reducers')
 
 const createRenderer = require('../lib/server_renderer')
 const createDatabase = require('../lib/database')
 const createTemplateManager = require('../lib/template_manager')
-const toFloormanFormat = require('../lib/to_floorman_format')
 
 process.on('unhandledRejection', err => { throw err })
 
@@ -68,9 +65,7 @@ function writeRecordHTML (outputFile, { website, template, record, meta }) {
     mkdirp(dirname(outputFile), err => {
       if (err) return reject(err)
       const o = fs.createWriteStream(outputFile)
-      const state = toFloormanFormat({ website, meta, record })
-      const store = createStore(combineReducers(reducers), state)
-      const params = { props: { store } }
+      const params = { data: { website, meta, record } }
       resolve(renderer(template, o, params))
     })
   })

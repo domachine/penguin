@@ -1,1 +1,9 @@
 /node_modules/*
+
+# Ignore transpiled output
+/actions.js
+/actions/*
+/reducers.js
+/reducers/*
+/selectors.js
+/selectors/*
