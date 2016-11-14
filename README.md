@@ -23,6 +23,10 @@ resulting file to `components.js`. The map is based on the selected field from t
 
 This starts a development server on `http://localhost:3000` to be used to develop a website.
 
+*Available CLI options*
+
+  * `-v` The view engine to use (default is `html` [dust] but there is also `pug`)
+
 **pack**
 
 This *packs* all the relevant files, builds the component-renderer-script and places all under
