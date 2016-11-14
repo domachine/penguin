@@ -1,7 +1,7 @@
 {
   "name": "penguin.js",
   "version": "0.0.0",
-  "description": "",
+  "description": "This is a simple building chain for a CMS.",
   "main": "index.js",
   "bin": {
     "penguin": "bin/penguin.js"
@@ -10,7 +10,8 @@
     "watch": "scripts/watch.js",
     "build": "scripts/build.js",
     "prepublish": "scripts/build.js",
-    "test": "ava"
+    "test": "ava",
+    "start": "node server.js"
   },
   "ava": {
     "files": [
@@ -20,7 +21,7 @@
     ]
   },
   "keywords": [],
-  "author": "",
+  "author": "Dominik Burgdörfer <db@domachine.de> (https://domachine.de/)",
   "license": "ISC",
   "dependencies": {
     "babel-core": "^6.18.2",
@@ -58,5 +59,13 @@
     "babel-register": "^6.18.0",
     "sinon": "^1.17.6",
     "standard": "^8.5.0"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/domachine/penguin.js.git"
+  },
+  "bugs": {
+    "url": "https://github.com/domachine/penguin.js/issues"
+  },
+  "homepage": "https://github.com/domachine/penguin.js#readme"
 }
