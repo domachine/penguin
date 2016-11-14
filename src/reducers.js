@@ -13,7 +13,8 @@ export default combineReducers({
   languages,
   defaultLanguage,
   currentLanguage,
-  isEditable
+  isEditable,
+  isFetching
 })
 
 function locals (state = null, action) {
@@ -68,4 +69,8 @@ function isEditable (state = true, action) {
     default:
       return state
   }
+}
+
+function isFetching (state = false, action) {
+  return state
 }

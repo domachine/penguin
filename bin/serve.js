@@ -13,20 +13,24 @@ const mkdirp = require('mkdirp')
 
 const createApp = require('../lib/app')
 const createClientRendererScript = require('../lib/client_renderer_script')
-const createDustEngine = require('../lib/dust_engine')
-const createPugEngine = require('../lib/pug_engine')
+const createEngine = require('../lib/engine')
+const createDustDriver = require('../lib/dust_driver')
+const createPugDriver = require('../lib/pug_driver')
 const pkg = require('../package.json')
 
-const engines = {
-  html: createDustEngine,
-  pug: createPugEngine
+const drivers = {
+  html: createDustDriver,
+  pug: createPugDriver
 }
 
 const args = minimist(process.argv.slice(2))
 const staticPrefix = args['static'] || args.s || 'static'
 const ext = args['view-engine'] || args.v || 'html'
-const engine = engines[ext]({
-  assetPrefix: `http://localhost:${process.env.STATIC_PORT || 8080}`
+const engine = createEngine({
+  drivers,
+  driverParams: {
+    assetPrefix: `http://localhost:${process.env.STATIC_PORT || 8080}`
+  }
 })
 const app = createApp({ engine, ext })
 const b = browserify({

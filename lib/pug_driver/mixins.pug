@@ -1,0 +1,5 @@
+mixin component(name, props)
+  - var tagName = attributes.tagName || 'div'
+  - delete attributes.tagName
+  #{tagName}(data-component=name data-props=JSON.stringify(props))&attributes(attributes)
+    block

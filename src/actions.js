@@ -14,6 +14,10 @@ export const SAVE_SUCCESS = 'SAVE_SUCCESS'
 export const SAVE_FAILURE = 'SAVE_FAILURE'
 export const SWITCH_LANGUAGE = 'SWITCH_LANGUAGE'
 
+export function fetchAll () {
+  return () => {}
+}
+
 export function updateLocalFields (update) {
   return { type: UPDATE_LOCAL_FIELDS, update }
 }
