@@ -19,6 +19,10 @@ resulting file to `components.js`. The map is based on the selected field from t
 
 ## Commands
 
+**serve**
+
+This starts a development server on `http://localhost:3000` to be used to develop a website.
+
 **pack**
 
 This *packs* all the relevant files, builds the component-renderer-script and places all under
