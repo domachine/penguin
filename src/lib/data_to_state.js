@@ -1,6 +1,6 @@
 'use strict'
 
-export default function dataToState ({ website, meta, record }) {
+export default function dataToState ({ website, meta, record, language }) {
   const globalFields = website.fieldKeys
     .reduce(
       (fields, key) =>
@@ -12,6 +12,6 @@ export default function dataToState ({ website, meta, record }) {
     globals: { noLangFields: website.noLangFields, fields: globalFields },
     defaultLanguage: website.defaultLanguage,
     languages: website.languages,
-    currentLanguage: website.defaultLanguage || website.languages[0]
+    currentLanguage: language || website.defaultLanguage || website.languages[0]
   }
 }
