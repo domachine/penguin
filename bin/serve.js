@@ -10,6 +10,8 @@ const minimist = require('minimist')
 const browserify = require('browserify')
 const watchify = require('watchify')
 const mkdirp = require('mkdirp')
+const babelify = require('babelify')
+const envify = require('envify')
 
 const createApp = require('../lib/app')
 const createClientRendererScript = require('../lib/client_renderer_script')
@@ -40,8 +42,13 @@ const b = browserify({
   packageCache: {},
   plugin: [watchify]
 })
-.transform('babelify', { presets: ['react', 'es2015'] })
-.transform('envify', { _: 'purge' })
+.transform(babelify.configure({
+  presets: [
+    require('babel-preset-react'),
+    require('babel-preset-es2015')
+  ]
+}))
+.transform(envify)
 b.on('log', msg => console.log(msg))
 b.on('update', bundle)
 mkdirp('static', bundle)

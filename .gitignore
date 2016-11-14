@@ -8,3 +8,5 @@
 /selectors.js
 /selectors/*
 /lib/data_to_state.js
+/client.js
+/server.js
