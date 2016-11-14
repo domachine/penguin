@@ -32,6 +32,7 @@ This *packs* all the relevant files, builds the component-renderer-script and pl
 
   * `-p` The directory to store the resulting files (default `pack/`)
   * `-v` The view engine to use (default is `html` [dust] but there is also `pug`)
+  * `--asset-prefix` Specify the prefix to concatenate assets to
 
 **build**
 
@@ -54,7 +55,3 @@ component map. As the final step use `bin/pack.js` and `bin/build.js` to build t
 Template language should compile the files under `objects/`, `pages/` and place the output under
 `pack/`. They are currently abstracted using engines (see `lib/dust_engine.js` and
 `lib/pug_engine.js`).
-
-## TODO
-
-  * Generate client on packing.

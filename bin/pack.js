@@ -24,11 +24,12 @@ const drivers = {
 const args = minimist(process.argv.slice(2))
 const prefix = args.prefix || args.p || 'pack'
 const viewEngine = args['view-engine'] || args.v || 'html'
+const assetPrefix = args['asset-prefix'] || args.a || ''
 const env = Object.assign({}, process.env, {
   NODE_ENV: 'production',
   BABEL_ENV: 'production'
 })
-const render = createEngine({ drivers, driverParams: { assetPrefix: '' } })
+const render = createEngine({ drivers, driverParams: { assetPrefix } })
 mkdir('-p', prefix)
 mkdir('-p', join(prefix, 'static'))
 if (fs.existsSync('static')) rm('-rf', 'static/client.js')
