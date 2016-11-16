@@ -2,10 +2,8 @@
 
 'use strict'
 
-const http = require('http')
 const fs = require('fs')
 const { join } = require('path')
-const express = require('express')
 const minimist = require('minimist')
 const browserify = require('browserify')
 const watchify = require('watchify')
@@ -34,7 +32,7 @@ const engine = createEngine({
     assetPrefix: `http://localhost:${process.env.STATIC_PORT || 8080}`
   }
 })
-const app = createApp({ engine, ext })
+const app = createApp({ engine, ext, staticPrefix })
 const b = browserify({
   entries: [createClientRendererScript(pkg)],
   basedir: process.cwd(),
@@ -52,10 +50,6 @@ const b = browserify({
 b.on('log', msg => console.log(msg))
 b.on('update', bundle)
 mkdirp('static', bundle)
-const s = express().use(express.static(join(process.cwd(), staticPrefix)))
-http.createServer(s).listen(process.env.STATIC_PORT || 8080, () => {
-  console.log('> Static server ready on port ' + (process.env.STATIC_PORT || 8080))
-})
 app.listen(process.env.PORT || 3000, () => {
   console.log('> Ready on port ' + (process.env.PORT || 3000))
 })
