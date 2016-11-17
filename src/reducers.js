@@ -17,7 +17,7 @@ export default combineReducers({
   isFetching
 })
 
-function locals (state = null, action) {
+function locals (state = {}, action) {
   switch (action.type) {
     case UPDATE_LOCAL_FIELDS:
       return Object.assign({}, state, {
@@ -28,7 +28,7 @@ function locals (state = null, action) {
   }
 }
 
-function globals (state = null, action) {
+function globals (state = {}, action) {
   switch (action.type) {
     case UPDATE_GLOBAL_FIELDS:
       return Object.assign({}, state, {

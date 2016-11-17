@@ -8,7 +8,7 @@ export default function dataToState ({ website, meta, record, language }) {
       {}
     )
   return {
-    locals: Object.assign({}, meta, { fields: record.fields }),
+    locals: Object.assign({ noLangFields: [] }, meta, { fields: record.fields }),
     globals: { noLangFields: website.noLangFields, fields: globalFields },
     defaultLanguage: website.defaultLanguage,
     languages: website.languages,

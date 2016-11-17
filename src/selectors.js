@@ -48,6 +48,7 @@ export function createValueSelector () {
       name
     ) => {
       const isGlobal = Object.keys(globalFields).indexOf(name) !== -1
+      if (!currentLanguage) return
       return extractField(
         {
           currentLanguage,
