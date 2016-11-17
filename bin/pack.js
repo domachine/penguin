@@ -30,6 +30,11 @@ const drivers = {
 const args = minimist(process.argv.slice(2))
 const prefix = args.prefix || args.p || 'pack'
 const viewEngine = args['view-engine'] || args.v || 'html'
+const website = args['website'] || args.w
+if (!website) {
+  console.error('no website name given (e.g. --website my-site)')
+  process.exit(1)
+}
 const env = Object.assign({}, process.env, {
   NODE_ENV: 'production',
   BABEL_ENV: 'production'
@@ -47,7 +52,7 @@ spawn(`${__dirname}/build_server_renderer.js`, [], opts)
   .stdout.pipe(fs.createWriteStream(join(prefix, 'server_renderer.js')))
 spawn(`${__dirname}/build_client_renderer.js`, [], opts)
   .stdout.pipe(fs.createWriteStream(join(prefix, 'static', 'client.js')))
-const files = glob.sync('@(objects|pages)/**/*.' + viewEngine)
+const files = glob.sync('@(objects|pages)/*.' + viewEngine)
 Promise.all(
   files.map(file => {
     const d = dirname(file)
@@ -57,7 +62,8 @@ Promise.all(
     return new Promise((resolve, reject) => {
       mkdirp(dirname(output), err => {
         if (err) return reject(err)
-        resolve(engine(file))
+        const recordType = d.slice(0, -1)
+        resolve(engine(file, { signature: [website, recordType, b] }))
       })
     })
     .then(content =>
