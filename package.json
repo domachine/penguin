@@ -42,7 +42,7 @@
     "json-query": "^2.2.0",
     "minimist": "^1.2.0",
     "mkdirp": "^0.5.1",
-    "penguin.js-core": "0.2.0",
+    "penguin.js-core": "0.3.0",
     "pug": "^2.0.0-beta6",
     "redux": "^3.6.0",
     "redux-thunk": "^2.1.0",
