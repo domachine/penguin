@@ -27,10 +27,12 @@ browserify(str(js(pkg)), { basedir: process.cwd(), detectGlobals: false, browser
 function js ({ name }) {
   return (
 `import render from '${name}/server.js'
+import dataToState from '${name}/lib/data_to_state'
 import components from './components'
 const { component: name, props, data } = __params
 const component = components[name]
-__params.output = !component ? '' : render(component, { props, data })
+__params.output =
+  !component ? '' : render(component, { props, state: dataToState(data) })
 `
   )
 }

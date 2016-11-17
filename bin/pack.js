@@ -13,6 +13,12 @@ const mkdirp = require('mkdirp')
 const createEngine = require('../lib/engine')
 const createDustDriver = require('../lib/dust_driver')
 const createPugDriver = require('../lib/pug_driver')
+const { default: renderer } = require('../server')
+
+require('babel-register')({
+  presets: [require('babel-preset-react')],
+  plugins: [require('babel-plugin-transform-es2015-modules-commonjs')]
+})
 
 process.on('unhandledRejection', err => { throw err })
 
@@ -24,12 +30,15 @@ const drivers = {
 const args = minimist(process.argv.slice(2))
 const prefix = args.prefix || args.p || 'pack'
 const viewEngine = args['view-engine'] || args.v || 'html'
-const assetPrefix = args['asset-prefix'] || args.a || ''
 const env = Object.assign({}, process.env, {
   NODE_ENV: 'production',
   BABEL_ENV: 'production'
 })
-const render = createEngine({ drivers, driverParams: { assetPrefix } })
+const engine = createEngine({
+  drivers,
+  renderer,
+  components: require(join(process.cwd(), 'components')).default
+})
 mkdir('-p', prefix)
 mkdir('-p', join(prefix, 'static'))
 if (fs.existsSync('static')) rm('-rf', 'static/client.js')
@@ -48,7 +57,7 @@ Promise.all(
     return new Promise((resolve, reject) => {
       mkdirp(dirname(output), err => {
         if (err) return reject(err)
-        resolve(render(file))
+        resolve(engine(file))
       })
     })
     .then(content =>

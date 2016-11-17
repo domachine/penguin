@@ -62,7 +62,7 @@ function currentLanguage (state = null, action) {
   }
 }
 
-function isEditable (state = true, action) {
+function isEditable (state = false, action) {
   switch (action.type) {
     case SET_EDITABLE:
       return action.value

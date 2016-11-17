@@ -11,12 +11,19 @@ export default function render ({ components }) {
       applyMiddleware(thunk),
       window.devToolsExtension ? window.devToolsExtension() : f => f
     )
-  const store = createStore(reduce, { isFetching: true }, middleware)
+  const store = createStore(reduce, {
+    isEditable: !document.body.getAttribute('data-penguin-built'),
+    isFetching: !document.body.getAttribute('data-penguin-built')
+  }, middleware)
   const els = document.querySelectorAll('[data-component]')
   store.dispatch(fetchAll())
   for (let el of els) {
-    const component = components[el.getAttribute('data-component')]
-    if (!component) continue
+    const name = el.getAttribute('data-component')
+    const component = components[name]
+    if (!component) {
+      el.innerHTML = `Unable to resolve component '${name}'`
+      continue
+    }
     const propsStr = decodeURIComponent(el.getAttribute('data-props') || '{}')
     const additionalProps = { store }
     const props = Object.assign({}, JSON.parse(propsStr), additionalProps)

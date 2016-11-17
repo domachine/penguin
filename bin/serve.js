@@ -26,12 +26,7 @@ const drivers = {
 const args = minimist(process.argv.slice(2))
 const staticPrefix = args['static'] || args.s || 'static'
 const ext = args['view-engine'] || args.v || 'html'
-const engine = createEngine({
-  drivers,
-  driverParams: {
-    assetPrefix: `http://localhost:${process.env.STATIC_PORT || 8080}`
-  }
-})
+const engine = createEngine({ drivers })
 const app = createApp({ engine, ext, staticPrefix })
 const b = browserify({
   entries: [createClientRendererScript(pkg)],
