@@ -12,7 +12,7 @@ const babelify = require('babelify')
 const envify = require('envify')
 
 const createApp = require('../lib/app')
-const createClientRendererScript = require('../lib/client_renderer_script')
+const createClientRuntimeScript = require('../lib/client_runtime_script')
 const createEngine = require('../lib/engine')
 const createDustDriver = require('../lib/dust_driver')
 const createPugDriver = require('../lib/pug_driver')
@@ -29,7 +29,7 @@ const ext = args['view-engine'] || args.v || 'html'
 const engine = createEngine({ drivers })
 const app = createApp({ engine, ext, staticPrefix })
 const b = browserify({
-  entries: [createClientRendererScript(pkg)],
+  entries: [createClientRuntimeScript(pkg)],
   basedir: process.cwd(),
   cache: {},
   packageCache: {},

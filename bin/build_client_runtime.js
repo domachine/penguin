@@ -7,11 +7,11 @@ const babel = require('babel-core')
 const babelify = require('babelify')
 const envify = require('envify')
 
-const createClientRendererScript = require('../lib/client_renderer_script')
+const createClientRuntimeScript = require('../lib/client_runtime_script')
 const pkg = require('../package.json')
 
 browserify({
-  entries: [createClientRendererScript(pkg)],
+  entries: [createClientRuntimeScript(pkg)],
   basedir: process.cwd()
 })
 .transform(babelify.configure({
