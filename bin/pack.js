@@ -36,11 +36,6 @@ const drivers = {
 const args = minimist(process.argv.slice(2))
 const prefix = args.prefix || args.p || 'docs'
 const viewEngine = args['view-engine'] || args.v || 'html'
-const website = args['website'] || args.w
-if (!website) {
-  console.error('no website name given (e.g. --website my-site)')
-  process.exit(1)
-}
 const env = Object.assign({}, process.env, {
   NODE_ENV: 'production',
   BABEL_ENV: 'production'
@@ -69,9 +64,7 @@ Promise.all(
     const metaJSON = join(d, b + '.meta.json')
     return Promise.all([
       mkdirpAsync(dirname(htmlOutput))
-        .then(() =>
-          engine(file, { signature: [website, d.slice(0, -1), b] })
-        ),
+        .then(() => engine(file, { signature: [d.slice(0, -1), b] })),
       loadJSON(metaJSON).catch(err => {
         if (err.code === 'ENOENT') return {}
         throw err
