@@ -4,7 +4,7 @@
 
 const fs = require('fs')
 const { join, dirname, basename } = require('path')
-const { Script } = require('vm')
+const vm = require('vm')
 const co = require('co')
 const glob = require('glob')
 const mkdirp = require('mkdirp')
@@ -12,20 +12,19 @@ const { cp, mkdir, rm } = require('shelljs')
 const minimist = require('minimist')
 const loadJSON = require('load-json-file')
 const writeJSON = require('write-json-file')
+const cheerio = require('cheerio')
 
 const createFsDriver = require('../lib/fs_driver')
-const createServerRuntime = require('../lib/server_runtime')
 
 process.on('unhandledRejection', err => { throw err })
 
 const args = minimist(process.argv.slice(2))
 const prefix = args['template-prefix'] || args.p || 'docs'
 const databasePrefix = args['data-prefix'] || args.d || 'data'
-const scriptPath = join(prefix, 'server_renderer.js')
+const runtimePath = join(prefix, 'server_runtime.js')
 const staticFiles = join(prefix, 'static')
-const script = new Script(fs.readFileSync(scriptPath, 'utf-8'))
+const runtime = new vm.Script(fs.readFileSync(runtimePath, 'utf-8'))
 const databaseDriver = createFsDriver({ prefix: databasePrefix })
-const runtime = createServerRuntime({ script })
 
 const hasStatic = fs.existsSync(staticFiles)
 
@@ -78,9 +77,14 @@ function writeRecordHTML (
   return new Promise((resolve, reject) => {
     mkdirp(dirname(outputFile), err => {
       if (err) return reject(err)
-      const o = fs.createWriteStream(outputFile)
-      const params = { data: { website, meta, record, language } }
-      resolve(runtime(template, o, params))
+      const output = fs.createWriteStream(outputFile)
+      const data = { website, meta, record, language }
+      const ctx = vm.createContext({
+        __params: { data, html: cheerio.load(template) }
+      })
+      runtime.runInContext(ctx)
+      output.write(ctx.__params.output)
+      output.end()
     })
   })
 }

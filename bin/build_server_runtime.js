@@ -16,6 +16,7 @@ browserify(str(js(pkg)), { basedir: process.cwd(), detectGlobals: false, browser
     plugins: [require('babel-plugin-transform-es2015-modules-commonjs')]
   }))
   .transform(envify)
+  .transform(require('brfs'))
   .bundle((err, content) => {
     if (err) throw err
     const opts = { presets: [require('babel-preset-babili')], comments: false }
@@ -26,13 +27,17 @@ browserify(str(js(pkg)), { basedir: process.cwd(), detectGlobals: false, browser
 
 function js ({ name }) {
   return (
-`import render from '${name}/server.js'
+`import createServerRenderer from '${name}/server_renderer.js'
 import dataToState from '${name}/lib/data_to_state'
 import components from './components'
-const { component: name, props, data } = __params
-const component = components[name]
-__params.output =
-  !component ? '' : render(component, { props, state: dataToState(data) })
+const { html, data } = __params
+const renderer = createServerRenderer({
+  components,
+  state: dataToState(data)
+})
+const $ = renderer(html)
+$('body').attr('data-penguin-built', 'true')
+__params.output = $.html()
 `
   )
 }

@@ -16,7 +16,7 @@ const Bluebird = require('bluebird')
 const createEngine = require('../lib/engine')
 const createDustDriver = require('../lib/dust_driver')
 const createPugDriver = require('../lib/pug_driver')
-const { default: renderer } = require('../server')
+const { default: createServerRenderer } = require('../server_renderer')
 
 require('babel-register')({
   presets: [require('babel-preset-react')],
@@ -42,15 +42,17 @@ const env = Object.assign({}, process.env, {
 })
 const engine = createEngine({
   drivers,
-  renderer,
-  components: require(join(process.cwd(), 'components')).default
+  renderer: createServerRenderer({
+    state: { isEditable: true, isFetching: true },
+    components: require(join(process.cwd(), 'components')).default
+  })
 })
 mkdir('-p', prefix)
 mkdir('-p', join(prefix, 'static'))
 if (fs.existsSync('static')) rm('-rf', 'static/client.js')
 const opts = { stdio: ['ignore', 'pipe', 'inherit'], env }
-spawn(`${__dirname}/build_server_renderer.js`, [], opts)
-  .stdout.pipe(fs.createWriteStream(join(prefix, 'server_renderer.js')))
+spawn(`${__dirname}/build_server_runtime.js`, [], opts)
+  .stdout.pipe(fs.createWriteStream(join(prefix, 'server_runtime.js')))
 spawn(`${__dirname}/build_client_runtime.js`, [], opts)
   .stdout.pipe(fs.createWriteStream(join(prefix, 'static', 'client.js')))
 const files = glob.sync('@(objects|pages)/*.' + viewEngine)
