@@ -4,7 +4,7 @@
 
 const { dirname, join, basename, extname } = require('path')
 const fs = require('fs')
-const { spawn } = require('child_process')
+const { spawn, spawnSync } = require('child_process')
 const { cp, mkdir, rm } = require('shelljs')
 const glob = require('glob')
 const minimist = require('minimist')
@@ -40,6 +40,9 @@ const env = Object.assign({}, process.env, {
   NODE_ENV: 'production',
   BABEL_ENV: 'production'
 })
+spawnSync(`${__dirname}/create_component_map.js`, [
+  'components', '-o', 'components.js'
+], { stdio: 'inherit', env })
 const engine = createEngine({
   drivers,
   renderer: createServerRenderer({
@@ -49,7 +52,7 @@ const engine = createEngine({
 })
 mkdir('-p', prefix)
 mkdir('-p', join(prefix, 'static'))
-if (fs.existsSync('static')) rm('-rf', 'static/client.js')
+if (fs.existsSync('static')) rm('-f', 'static/client.js')
 const opts = { stdio: ['ignore', 'pipe', 'inherit'], env }
 spawn(`${__dirname}/build_server_runtime.js`, [], opts)
   .stdout.pipe(fs.createWriteStream(join(prefix, 'server_runtime.js')))

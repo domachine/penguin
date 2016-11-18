@@ -4,6 +4,7 @@
 
 const fs = require('fs')
 const { join } = require('path')
+const { spawn, spawnSync } = require('child_process')
 const minimist = require('minimist')
 const browserify = require('browserify')
 const watchify = require('watchify')
@@ -28,6 +29,12 @@ const staticPrefix = args['static'] || args.s || 'static'
 const ext = args['view-engine'] || args.v || 'html'
 const engine = createEngine({ drivers })
 const app = createApp({ engine, ext, staticPrefix })
+spawnSync(`${__dirname}/create_component_map.js`, [
+  'components', '-o', 'components.js'
+], { stdio: 'inherit' })
+spawn(`${__dirname}/create_component_map.js`, [
+  'components', '-w', '-o', 'components.js'
+], { stdio: 'inherit' })
 const b = browserify({
   entries: [createClientRuntimeScript(pkg)],
   basedir: process.cwd(),
