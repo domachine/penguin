@@ -36,7 +36,6 @@ This *packs* all the relevant files, builds the component-renderer-script and pl
 
   * `-p` The directory to store the resulting files (default `pack/`)
   * `-v` The view engine to use (default is `html` [dust] but there is also `pug`)
-  * `--asset-prefix` Specify the prefix to concatenate assets to
 
 **build**
 
