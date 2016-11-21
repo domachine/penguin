@@ -10,7 +10,7 @@ const envify = require('envify')
 
 const pkg = require('../package.json')
 
-browserify(str(js(pkg)), { basedir: process.cwd(), detectGlobals: false, browserField: false })
+browserify(str(js(pkg)), { basedir: process.cwd() })
   .transform(babelify.configure({
     presets: [require('babel-preset-react')],
     plugins: [require('babel-plugin-transform-es2015-modules-commonjs')]
