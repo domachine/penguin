@@ -8,7 +8,7 @@ import { loadState } from './actions'
 export default function render ({ components }) {
   const signature =
     JSON.parse(document.body.getAttribute('data-penguin-signature'))
-  const splittedLocation = window.location.href.split('/')
+  const splittedLocation = window.location.pathname.split('/')
   const language = splittedLocation[1]
   const middleware =
     compose(
