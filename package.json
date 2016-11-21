@@ -49,6 +49,7 @@
     "redux": "^3.6.0",
     "redux-thunk": "^2.1.0",
     "reselect": "^2.5.4",
+    "resolve": "^1.1.7",
     "shelljs": "^0.7.5",
     "string-to-stream": "^1.1.0",
     "to-pascal-case": "^1.0.0",
