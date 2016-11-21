@@ -10,3 +10,4 @@
 /lib/data_to_state.js
 /client_renderer.js
 /server_renderer.js
+/link/*
