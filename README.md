@@ -21,7 +21,9 @@ resulting file to `components.js`. The map is based on the selected field from t
 
 **serve**
 
-This starts a development server on `http://localhost:3000` to be used to develop a website.
+This starts a development server on `http://localhost:3000` to be used to develop a website. It also
+starts `watchify` and recreates the client runtime on changes (including recreation of
+`components.js` based on `components/` and `package.json`).
 
 *Available CLI options*
 
@@ -34,27 +36,15 @@ This *packs* all the relevant files, builds the component-renderer-script and pl
 
 *Available CLI options*
 
-  * `-p` The directory to store the resulting files (default `pack/`)
+  * `-p` The directory to store the resulting files (default `docs/`)
   * `-v` The view engine to use (default is `html` [dust] but there is also `pug`)
 
 **build**
 
-This renders all templates under `pack/` statically and places the output under `dist/`.
+This renders all templates under `docs/` statically.
 
 *Available CLI options*
 
   * `-p` The directory where the packed files are stored (previously generated using `pack`, default
-    is `pack/`)
+    is `docs/`)
   * `-d` The directory where data files reside in (default is `data/`)
-  * `-o` The output where the built files should be stored (default is `dist/`)
-
-## Lowlevel Workflow
-
-Each time you added or removed a component, use `bin/create_component_map.js` to recreate the
-component map. As the final step use `bin/pack.js` and `bin/build.js` to build the static files.
-
-## Template languages
-
-Template language should compile the files under `objects/`, `pages/` and place the output under
-`pack/`. They are currently abstracted using engines (see `lib/dust_engine.js` and
-`lib/pug_engine.js`).
