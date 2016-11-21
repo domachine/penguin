@@ -27,6 +27,10 @@ export function isEditable ({ isEditable }) {
   return isEditable
 }
 
+export function isFetching ({ isFetching }) {
+  return isFetching
+}
+
 export function isSaving ({ isSaving }) {
   return isSaving
 }
