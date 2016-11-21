@@ -15,12 +15,12 @@ const renderHref = ({ currentLanguage, href }) =>
 export default function createLink (ownProps, el) {
   const { store } = ownProps
   return {
-    componentDidMount () {
-      store.subscribe(state => render(calcProps(state), el))
-    },
-    render () {
-      return render(calcProps(store.getState()), el)
-    }
+    componentDidMount () { store.subscribe(onUpdate) },
+    render: onUpdate
+  }
+
+  function onUpdate () {
+    return render(calcProps(store.getState()), el)
   }
 
   function calcProps (state) {
