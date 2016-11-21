@@ -1,7 +1,7 @@
 'use strict'
 
 export default function dataToState ({ website, meta, record, language }) {
-  const globalFields = website.fieldKeys
+  const globalFields = (website.fieldKeys || [])
     .reduce(
       (fields, key) =>
         Object.assign({}, fields, { [key]: website.fields[key] || null }),

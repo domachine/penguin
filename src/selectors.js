@@ -27,8 +27,8 @@ export function isEditable ({ isEditable }) {
   return isEditable
 }
 
-export function isFetching ({ isFetching }) {
-  return isFetching
+export function isLoading ({ isLoading }) {
+  return isLoading
 }
 
 export function isSaving ({ isSaving }) {

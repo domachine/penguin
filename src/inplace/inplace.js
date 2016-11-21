@@ -1,5 +1,5 @@
 import sanitize from 'sanitize-html'
-import { createValueSelector, isEditable, isFetching } from '../selectors'
+import { createValueSelector, isEditable, isLoading } from '../selectors'
 import { update } from '../actions'
 
 export default function createInplace (ownProps, el) {
@@ -36,15 +36,15 @@ function createPropCalculator (props) {
       value: v == null ? (props.innerHTML || '') : v
     }, {
       isEditable: isEditable(state),
-      isFetching: isFetching(state)
+      isLoading: isLoading(state)
     })
   }
 }
 
 function render (props, el) {
-  const { value, isEditable, isFetching } = props
+  const { value, isEditable, isLoading } = props
   if (!el) return props.value
-  const contenteditable = (isEditable && !isFetching) ? 'true' : 'false'
+  const contenteditable = (isEditable && !isLoading) ? 'true' : 'false'
   if (el.getAttribute('contenteditable') !== contenteditable) {
     el.setAttribute('contenteditable', contenteditable)
   }

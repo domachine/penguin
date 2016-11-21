@@ -4,7 +4,9 @@ import {
   UPDATE_LOCAL_FIELDS,
   UPDATE_GLOBAL_FIELDS,
   SET_EDITABLE,
-  SWITCH_LANGUAGE
+  SET_LOADING,
+  SWITCH_LANGUAGE,
+  HYDRATE
 } from './actions'
 
 export default combineReducers({
@@ -14,7 +16,7 @@ export default combineReducers({
   defaultLanguage,
   currentLanguage,
   isEditable,
-  isFetching
+  isLoading
 })
 
 function locals (state = {}, action) {
@@ -23,6 +25,8 @@ function locals (state = {}, action) {
       return Object.assign({}, state, {
         fields: Object.assign({}, state.fields, action.update)
       })
+    case HYDRATE:
+      return action.state.locals
     default:
       return state
   }
@@ -34,6 +38,8 @@ function globals (state = {}, action) {
       return Object.assign({}, state, {
         fields: Object.assign({}, state.fields, action.update)
       })
+    case HYDRATE:
+      return action.state.globals
     default:
       return state
   }
@@ -41,6 +47,8 @@ function globals (state = {}, action) {
 
 function languages (state = [], action) {
   switch (action.type) {
+    case HYDRATE:
+      return action.state.languages
     default:
       return state
   }
@@ -48,6 +56,8 @@ function languages (state = [], action) {
 
 function defaultLanguage (state = null, action) {
   switch (action.type) {
+    case HYDRATE:
+      return action.state.defaultLanguage
     default:
       return state
   }
@@ -57,6 +67,8 @@ function currentLanguage (state = null, action) {
   switch (action.type) {
     case SWITCH_LANGUAGE:
       return action.lang
+    case HYDRATE:
+      return action.state.currentLanguage
     default:
       return state
   }
@@ -71,6 +83,11 @@ function isEditable (state = false, action) {
   }
 }
 
-function isFetching (state = false, action) {
-  return state
+function isLoading (state = false, action) {
+  switch (action.type) {
+    case SET_LOADING:
+      return action.value
+    default:
+      return state
+  }
 }

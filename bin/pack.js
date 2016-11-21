@@ -46,7 +46,7 @@ spawnSync(`${__dirname}/create_component_map.js`, [
 const engine = createEngine({
   drivers,
   renderer: createServerRenderer({
-    state: { isEditable: true, isFetching: true },
+    state: { isEditable: true, isLoading: true },
     components: require(join(process.cwd(), 'components')).default
   })
 })

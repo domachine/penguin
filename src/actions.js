@@ -1,3 +1,4 @@
+import dataToState from './lib/data_to_state'
 import {
   globalFields,
   currentLanguage,
@@ -6,16 +7,36 @@ import {
   globalNoLangFields
 } from './selectors'
 
+export const HYDRATE = 'HYDRATE'
 export const UPDATE_LOCAL_FIELDS = 'UPDATE_LOCAL_FIELDS'
 export const UPDATE_GLOBAL_FIELDS = 'UPDATE_GLOBAL_FIELDS'
 export const SET_EDITABLE = 'SET_EDITABLE'
+export const SET_LOADING = 'SET_LOADING'
 export const SAVE = 'SAVE'
 export const SAVE_SUCCESS = 'SAVE_SUCCESS'
 export const SAVE_FAILURE = 'SAVE_FAILURE'
 export const SWITCH_LANGUAGE = 'SWITCH_LANGUAGE'
 
-export function fetchAll () {
-  return () => {}
+export function loadState ({ type, template, objectType, id, language }) {
+  return dispatch => {
+    dispatch({ type: SET_LOADING, value: true })
+    const templatePath = `/templates/${type}s/${template}.json`
+    const recordPath = `/data/${type}s/${type === 'page' ? template : id}.json`
+    const isNewObject = type === 'object' && id === 'new'
+    const promises = Promise.all([
+      window.fetch('/data/website.json', { credentials: 'same-origin' }),
+      window.fetch(templatePath),
+      isNewObject
+        ? Promise.resolve({ type: objectType, fields: {} })
+        : window.fetch(recordPath)
+    ].map(p => p.then(res => res.json())))
+    promises
+      .then(([website, { meta }, record]) => {
+        const state = dataToState({ website, meta, record, language })
+        dispatch({ type: HYDRATE, state })
+        dispatch({ type: SET_LOADING, value: false })
+      })
+  }
 }
 
 export function updateLocalFields (update) {
