@@ -3,3 +3,8 @@ mixin component(name, props)
   - delete attributes.tagName
   #{tagName}(data-component=name data-props=JSON.stringify(props))&attributes(attributes)
     block
+
+mixin link(props)
+  - var tagName = 'a'
+  #{tagName}(data-component='Link' data-props=JSON.stringify(props))
+    block
