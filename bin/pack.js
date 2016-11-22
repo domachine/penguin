@@ -53,7 +53,9 @@ const engine = createEngine({
     components: require(join(process.cwd(), 'server_components')).default
   })
 })
-mkdir('-p', prefix)
+rm('-rf', prefix)
+if (fs.existsSync('files')) cp('-R', 'files', prefix)
+else mkdir('-p', prefix)
 mkdir('-p', join(prefix, 'static'))
 if (fs.existsSync('static')) rm('-f', 'static/client.js')
 const opts = { stdio: ['ignore', 'pipe', 'inherit'], env }
