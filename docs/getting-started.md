@@ -28,7 +28,7 @@ Now open the `package.json` in your favorite editor and add the following conten
 }
 ```
 
-Since penguin.js supports multilanguage websites you have to specify at one language that you want
+Since penguin.js supports multilanguage websites you have to specify at least one language that you want
 your website to be in. This is set as you can see in the snippet using `penguin.languages`. The
 `penguin.components` entry is a hash that lists all our installed third party components. penguin.js
 ships with two builtin components that we just included. We'll see later what we can use them for.
