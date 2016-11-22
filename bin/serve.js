@@ -17,6 +17,7 @@ const createClientRuntimeScript = require('../lib/client_runtime_script')
 const createEngine = require('../lib/engine')
 const createDustDriver = require('../lib/dust_driver')
 const createPugDriver = require('../lib/pug_driver')
+const createFsDriver = require('../lib/fs_driver')
 const pkg = require('../package.json')
 
 const drivers = {
@@ -42,7 +43,14 @@ if (!defaultLanguage) {
   process.exit(1)
 }
 const engine = createEngine({ drivers })
-const app = createApp({ engine, ext, staticPrefix, defaultLanguage })
+const app = createApp({
+  engine,
+  ext,
+  staticPrefix,
+  defaultLanguage,
+  dataPrefix: 'data',
+  databaseDriver: createFsDriver({ prefix: 'data' })
+})
 spawnSync(`${__dirname}/create_component_map.js`, [
   'components', '-b', '-o', 'components.js'
 ], { stdio: 'inherit' })
