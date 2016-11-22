@@ -3,7 +3,7 @@
 'use strict'
 
 const fs = require('fs')
-const { join, basename } = require('path')
+const { join, basename, relative } = require('path')
 const glob = require('glob')
 const toPascal = require('to-pascal-case')
 const minimist = require('minimist')
@@ -17,6 +17,7 @@ function main () {
   const args = minimist(process.argv.slice(2))
   const dir = args._[0] || 'components'
   const output = args.output || args.o || '-'
+  const browser = args.browser || args.b || false
   const watch = args.watch || args.w || false
   const initial = args.initial || args.i || false
 
@@ -26,7 +27,7 @@ function main () {
     pattern,
     output
   })
-  const resolver = createResolver({ pattern })
+  const resolver = createResolver({ pattern, browser })
   const generator = createGenerator({ resolver, writer })
 
   if (!watch) {
@@ -51,7 +52,7 @@ function createGenerator ({ resolver, writer }) {
   }
 }
 
-function createResolver ({ pattern }) {
+function createResolver ({ pattern, browser }) {
   return function () {
     return Promise.all([
       new Promise((resolve, reject) => {
@@ -71,7 +72,32 @@ function createResolver ({ pattern }) {
         })))
       })
     ])
-    .then(srcs => [].concat(...srcs))
+    .then(srcs => {
+      const entries = [].concat(...srcs)
+      return resolveModulePaths(entries, { browser })
+    })
+  }
+
+  function resolveModulePaths (entries, { browser }) {
+    return Promise.all(entries.map(entry =>
+      new Promise((resolve, reject) => {
+        resolveModule(entry.file, { basedir: process.cwd() }, (err, res, pkg) => {
+          if (err) return reject(err)
+          if (!pkg || typeof pkg.browser !== 'string') return resolve(entry)
+          const prefix = entry.file.startsWith('./') ? './' : ''
+          const modulePath =
+            browser
+              ? ((!pkg || typeof pkg.browser !== 'string')
+                ? entry.file
+                : prefix + join(entry.file, pkg.browser))
+              : prefix + relative(process.cwd(), res)
+          resolve({
+            name: entry.name,
+            file: modulePath
+          })
+        })
+      })
+    ))
   }
 }
 

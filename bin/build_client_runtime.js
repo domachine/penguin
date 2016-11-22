@@ -3,9 +3,10 @@
 'use strict'
 
 const browserify = require('browserify')
-const babel = require('babel-core')
 const babelify = require('babelify')
 const envify = require('envify')
+const UglifyJS = require('uglify-js')
+const uglifyify = require('uglifyify')
 
 const createClientRuntimeScript = require('../lib/client_runtime_script')
 const pkg = require('../package.json')
@@ -21,10 +22,9 @@ browserify({
   ]
 }))
 .transform(envify)
+.transform(uglifyify)
 .bundle((err, content) => {
   if (err) throw err
-  const opts = { presets: [require('babel-preset-babili')], comments: false }
-  const res = babel.transform(content, opts)
-  if (err) throw err
+  const res = UglifyJS.minify(content.toString(), { fromString: true })
   console.log(res.code)
 })

@@ -41,13 +41,16 @@ const env = Object.assign({}, process.env, {
   BABEL_ENV: 'production'
 })
 spawnSync(`${__dirname}/create_component_map.js`, [
-  'components', '-o', 'components.js'
+  'components', '-b', '-o', 'components.js'
+], { stdio: 'inherit', env })
+spawnSync(`${__dirname}/create_component_map.js`, [
+  'components', '-o', 'server_components.js'
 ], { stdio: 'inherit', env })
 const engine = createEngine({
   drivers,
   renderer: createServerRenderer({
     state: { isEditable: true, isLoading: true },
-    components: require(join(process.cwd(), 'components')).default
+    components: require(join(process.cwd(), 'server_components')).default
   })
 })
 mkdir('-p', prefix)

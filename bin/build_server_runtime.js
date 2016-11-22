@@ -29,7 +29,7 @@ function js ({ name }) {
   return (
 `import createServerRenderer from '${name}/server_renderer.js'
 import dataToState from '${name}/lib/data_to_state'
-import components from './components'
+import components from './server_components'
 const { html, data } = __params
 const renderer = createServerRenderer({
   components,
