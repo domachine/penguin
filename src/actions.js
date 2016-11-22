@@ -1,4 +1,3 @@
-import dataToState from './lib/data_to_state'
 import {
   globalFields,
   currentLanguage,
@@ -17,7 +16,7 @@ export const SAVE_SUCCESS = 'SAVE_SUCCESS'
 export const SAVE_FAILURE = 'SAVE_FAILURE'
 export const SWITCH_LANGUAGE = 'SWITCH_LANGUAGE'
 
-export function loadState ({ type, template, objectType, id, language }) {
+export function loadState ({ type, template, objectType, id, stateSerializer }) {
   return dispatch => {
     dispatch({ type: SET_LOADING, value: true })
     const templatePath = `/templates/${type}s/${template}.json`
@@ -32,7 +31,7 @@ export function loadState ({ type, template, objectType, id, language }) {
     ].map(p => p.then(res => res.json())))
     promises
       .then(([website, { meta }, record]) => {
-        const state = dataToState({ website, meta, record, language })
+        const state = stateSerializer({ website, meta, record })
         dispatch({ type: HYDRATE, state })
         dispatch({ type: SET_LOADING, value: false })
       })

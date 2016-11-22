@@ -5,11 +5,10 @@ import 'babel-polyfill'
 import reduce from './reducers'
 import { loadState } from './actions'
 
-export default function render ({ components }) {
+export default function render ({ components, stateSerializer }) {
   const signature =
     JSON.parse(document.body.getAttribute('data-penguin-signature'))
   const splittedLocation = window.location.pathname.split('/')
-  const language = splittedLocation[1]
   const middleware =
     compose(
       applyMiddleware(thunk),
@@ -25,7 +24,7 @@ export default function render ({ components }) {
     template: signature[1],
     objectType: splittedLocation.filter(s => !!s).slice(0, -2)[0],
     id: splittedLocation.filter(s => !!s).slice(0, -1)[0],
-    language
+    stateSerializer
   }))
   for (let el of els) {
     const name = el.getAttribute('data-component')

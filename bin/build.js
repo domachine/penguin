@@ -78,9 +78,9 @@ function writeRecordHTML (
     mkdirp(dirname(outputFile), err => {
       if (err) return reject(err)
       const output = fs.createWriteStream(outputFile)
-      const data = { website, meta, record, language }
+      const data = { website, meta, record }
       const ctx = vm.createContext({
-        __params: { data, html: cheerio.load(template) }
+        __params: { data, language, html: cheerio.load(template) }
       })
       runtime.runInContext(ctx)
       output.write(ctx.__params.output)

@@ -7,7 +7,7 @@
 /reducers/*
 /selectors.js
 /selectors/*
-/lib/data_to_state.js
+/lib/state_serializer.js
 /client_renderer.js
 /server_renderer.js
 /link/*

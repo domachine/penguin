@@ -25,10 +25,24 @@ const drivers = {
 }
 
 const args = minimist(process.argv.slice(2))
+const defaultLanguage = process.env.npm_package_penguin_languages_0
 const staticPrefix = args['static'] || args.s || 'static'
 const ext = args['view-engine'] || args.v || 'html'
+if (!defaultLanguage) {
+  console.error('no languages in package.json specified. e.g.:')
+  console.error(
+`
+    {
+      "penguin": {
+        "languages": ["en"]
+      }
+    }
+`
+  )
+  process.exit(1)
+}
 const engine = createEngine({ drivers })
-const app = createApp({ engine, ext, staticPrefix })
+const app = createApp({ engine, ext, staticPrefix, defaultLanguage })
 spawnSync(`${__dirname}/create_component_map.js`, [
   'components', '-b', '-o', 'components.js'
 ], { stdio: 'inherit' })
