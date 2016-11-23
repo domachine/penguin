@@ -33,6 +33,10 @@ export function isSaving ({ isSaving }) {
   return isSaving
 }
 
+export function isBuilt ({ isBuilt }) {
+  return isBuilt
+}
+
 export function createValueSelector () {
   return createSelector(
     localNoLangFields,

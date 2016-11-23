@@ -19,6 +19,7 @@ export default function createPenguin ({ store, receiver, fetch }) {
   })
   return {
     save () {
+      if (!stateDeserializer) return
       const state = store.getState()
       const { website, record } = stateDeserializer({ state })
       const recordID = isNew ? shortid() : id
