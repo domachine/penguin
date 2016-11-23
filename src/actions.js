@@ -10,33 +10,13 @@ export const HYDRATE = 'HYDRATE'
 export const UPDATE_LOCAL_FIELDS = 'UPDATE_LOCAL_FIELDS'
 export const UPDATE_GLOBAL_FIELDS = 'UPDATE_GLOBAL_FIELDS'
 export const SET_EDITABLE = 'SET_EDITABLE'
-export const SET_LOADING = 'SET_LOADING'
+export const LOAD = 'LOAD'
+export const LOAD_SUCCESS = 'LOAD_SUCCESS'
+export const LOAD_FAILURE = 'LOAD_FAILURE'
 export const SAVE = 'SAVE'
 export const SAVE_SUCCESS = 'SAVE_SUCCESS'
 export const SAVE_FAILURE = 'SAVE_FAILURE'
 export const SWITCH_LANGUAGE = 'SWITCH_LANGUAGE'
-
-export function loadState ({ type, template, objectType, id, stateSerializer }) {
-  return dispatch => {
-    dispatch({ type: SET_LOADING, value: true })
-    const templatePath = `/templates/${type}s/${template}.json`
-    const recordPath = `/data/${type}s/${type === 'page' ? template : id}.json`
-    const isNewObject = type === 'object' && id === 'new'
-    const promises = Promise.all([
-      window.fetch('/data/website.json', { credentials: 'same-origin' }),
-      window.fetch(templatePath),
-      isNewObject
-        ? Promise.resolve({ type: objectType, fields: {} })
-        : window.fetch(recordPath)
-    ].map(p => p.then(res => res.json())))
-    promises
-      .then(([website, { meta }, record]) => {
-        const state = stateSerializer({ website, meta, record })
-        dispatch({ type: HYDRATE, state })
-        dispatch({ type: SET_LOADING, value: false })
-      })
-  }
-}
 
 export function updateLocalFields (update) {
   return { type: UPDATE_LOCAL_FIELDS, update }

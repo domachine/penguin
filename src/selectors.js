@@ -15,10 +15,8 @@ export const globalNoLangFields = ({ globals: { noLangFields } }) => noLangField
 
 export const currentLanguage = createSelector(
   ({ currentLanguage }) => currentLanguage,
-  ({ defaultLanguage }) => defaultLanguage,
   ({ languages }) => languages[0],
-  (currentLanguage, defaultLanguage, firstLanguage) =>
-    currentLanguage || defaultLanguage || firstLanguage
+  (currentLanguage, defaultLanguage) => currentLanguage || defaultLanguage
 )
 
 export const languages = ({ languages }) => languages

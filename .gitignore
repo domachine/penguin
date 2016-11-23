@@ -12,5 +12,7 @@
 /lib/client_state_loader.js
 /lib/dom_scanner.js
 /lib/server_runtime.js
+/lib/penguin.js
+/lib/state_deserializer.js
 /link/*
 /inplace/*

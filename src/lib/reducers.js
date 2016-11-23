@@ -4,7 +4,12 @@ import {
   UPDATE_LOCAL_FIELDS,
   UPDATE_GLOBAL_FIELDS,
   SET_EDITABLE,
-  SET_LOADING,
+  LOAD,
+  LOAD_SUCCESS,
+  LOAD_FAILURE,
+  SAVE,
+  SAVE_SUCCESS,
+  SAVE_FAILURE,
   SWITCH_LANGUAGE,
   HYDRATE
 } from '../actions'
@@ -13,10 +18,11 @@ export default combineReducers({
   locals,
   globals,
   languages,
-  defaultLanguage,
   currentLanguage,
   isEditable,
   isLoading,
+  isSaving,
+  error,
   isBuilt
 })
 
@@ -55,15 +61,6 @@ function languages (state = [], action) {
   }
 }
 
-function defaultLanguage (state = null, action) {
-  switch (action.type) {
-    case HYDRATE:
-      return action.state.defaultLanguage
-    default:
-      return state
-  }
-}
-
 function currentLanguage (state = null, action) {
   switch (action.type) {
     case SWITCH_LANGUAGE:
@@ -90,8 +87,36 @@ function isEditable (state = false, action) {
 
 function isLoading (state = false, action) {
   switch (action.type) {
-    case SET_LOADING:
-      return action.value
+    case LOAD:
+      return true
+    case LOAD_SUCCESS:
+    case LOAD_FAILURE:
+      return false
+    default:
+      return state
+  }
+}
+
+function isSaving (state = false, action) {
+  switch (action.type) {
+    case SAVE:
+      return true
+    case SAVE_SUCCESS:
+    case SAVE_FAILURE:
+      return false
+    default:
+      return state
+  }
+}
+
+function error (state = null, action) {
+  switch (action.type) {
+    case SAVE_SUCCESS:
+    case LOAD_SUCCESS:
+      return null
+    case SAVE_FAILURE:
+    case LOAD_FAILURE:
+      return action.error
     default:
       return state
   }

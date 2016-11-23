@@ -1,6 +1,3 @@
-// import 'whatwg-fetch'
-// import 'babel-polyfill'
-
 export default function createStateLoader ({ stateSerializer, fetch }) {
   return {
     loadObjectState ({ type, id }) {
@@ -8,7 +5,7 @@ export default function createStateLoader ({ stateSerializer, fetch }) {
         loadWebsite(),
         loadTemplate('objects/' + type),
         id
-          ? window.fetch(`/data/objects/${id}.json`)
+          ? window.fetch(`/data/objects/${id}.json`, { credentials: 'same-origin' })
           : Promise.resolve(() => ({ type, fields: {} }))
       ])
     },
@@ -27,13 +24,15 @@ export default function createStateLoader ({ stateSerializer, fetch }) {
   }
 
   function loadTemplate (name) {
-    return fetch(`/templates/${name}.json`)
+    return fetch(`/templates/${name}.json`, { credentials: 'same-origin' })
   }
 
   function load (requests) {
     const promises = Promise.all(requests.map(p => p.then(res => res.json())))
-    return promises.then(([website, { meta }, record]) =>
-      stateSerializer({ website, meta, record })
-    )
+    return promises.then(([website, { meta }, record]) => ({
+      state: stateSerializer({ website, meta, record }),
+      website,
+      record
+    }))
   }
 }
