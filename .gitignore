@@ -16,3 +16,5 @@
 /lib/state_deserializer.js
 /link/*
 /inplace/*
+/saved_indicator/*
+/save_button/*
