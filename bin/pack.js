@@ -16,7 +16,7 @@ const Bluebird = require('bluebird')
 const createEngine = require('../lib/engine')
 const createDustDriver = require('../lib/dust_driver')
 const createPugDriver = require('../lib/pug_driver')
-const { default: createServerRenderer } = require('../server_renderer')
+const { default: createServerRuntime } = require('../lib/server_runtime')
 
 require('babel-register')({
   presets: [require('babel-preset-react')],
@@ -61,7 +61,7 @@ spawnSync(`${__dirname}/create_component_map.js`, [
 ], { stdio: 'inherit', env })
 const engine = createEngine({
   drivers,
-  renderer: createServerRenderer({
+  runtime: createServerRuntime({
     state: { isEditable: true, isLoading: true },
     components: require(join(process.cwd(), 'server_components')).default
   })

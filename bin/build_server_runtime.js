@@ -27,7 +27,7 @@ browserify(str(js(pkg)), { basedir: process.cwd() })
 
 function js ({ name }) {
   return (
-`import createServerRenderer from '${name}/server_renderer.js'
+`import createServerRenderer from '${name}/lib/server_runtime'
 import createStateSerializer from '${name}/lib/state_serializer'
 import components from './server_components'
 import { penguin as config } from './package.json'
@@ -35,7 +35,7 @@ const { html, data, language } = __params
 const stateSerializer = createStateSerializer({ config, language })
 const renderer = createServerRenderer({
   components,
-  state: stateSerializer(data)
+  state: Object.assign({}, stateSerializer(data), { isBuilt: true })
 })
 const $ = renderer(html)
 $('body').attr('data-penguin-built', 'true')

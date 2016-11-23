@@ -3,12 +3,14 @@
 # Ignore transpiled output
 /actions.js
 /actions/*
-/reducers.js
-/reducers/*
+/lib/reducers.js
+/lib/reducers/*
 /selectors.js
 /selectors/*
 /lib/state_serializer.js
-/client_renderer.js
-/server_renderer.js
+/lib/client_runtime.js
+/lib/client_state_loader.js
+/lib/dom_scanner.js
+/lib/server_runtime.js
 /link/*
 /inplace/*

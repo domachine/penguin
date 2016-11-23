@@ -7,7 +7,7 @@ import {
   SET_LOADING,
   SWITCH_LANGUAGE,
   HYDRATE
-} from './actions'
+} from '../actions'
 
 export default combineReducers({
   locals,
@@ -16,7 +16,8 @@ export default combineReducers({
   defaultLanguage,
   currentLanguage,
   isEditable,
-  isLoading
+  isLoading,
+  isBuilt
 })
 
 function locals (state = {}, action) {
@@ -72,6 +73,10 @@ function currentLanguage (state = null, action) {
     default:
       return state
   }
+}
+
+function isBuilt (state = false, action) {
+  return state
 }
 
 function isEditable (state = false, action) {
