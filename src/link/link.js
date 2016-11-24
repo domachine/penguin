@@ -3,7 +3,7 @@ const renderLink = ({ currentLanguage, className, id, href, innerHTML }) =>
     ${className ? `class='${className}'` : ''}
     ${id ? `id='${id}'` : ''}
     data-component='Link'
-    data-props='${JSON.stringify({ href, innerHTML })}'
+    data-props='${JSON.stringify({ href, className, id, innerHTML })}'
     href='${renderHref({ currentLanguage, href })}'
   >${innerHTML}</a>`
 
