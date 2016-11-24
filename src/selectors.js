@@ -37,6 +37,10 @@ export function isBuilt ({ isBuilt }) {
   return isBuilt
 }
 
+export function error ({ error }) {
+  return error
+}
+
 export function createValueSelector () {
   return createSelector(
     localNoLangFields,
