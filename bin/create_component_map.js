@@ -25,7 +25,8 @@ function main () {
   const writer = createWriter({
     stream: createStreamFactory({ output }),
     pattern,
-    output
+    output,
+    browser
   })
   const resolver = createResolver({ pattern, browser })
   const generator = createGenerator({ resolver, writer })
@@ -110,12 +111,13 @@ function createStreamFactory ({ output }) {
       : fs.createWriteStream(output)
 }
 
-function createWriter ({ stream, output, pattern }) {
+function createWriter ({ stream, output, pattern, browser }) {
+  const symbol = browser ? 'mount' : 'render'
   return entries => {
     // const files = glob.sync(pattern)
     const s = typeof stream === 'function' ? stream() : stream
     s.end(
-`${entries.map(({ file }, i) => `import C${i} from '${file}'`).join('\n')}
+`${entries.map(({ file }, i) => `import { ${symbol} as C${i} } from '${file}'`).join('\n')}
 export default {
 ${entries.map(({ name }, i) => `  '${name}': ${`C${i}`}`).join(',\n')}
 }`

@@ -1,11 +1,12 @@
 import createInplace from './inplace'
 
-export default function mount (props, el) {
+export function render (props) {
+  const component = createInplace(props)
+  return component.render()
+}
+
+export function mount (props, el) {
   const component = createInplace(props, el)
-  if (el) {
-    component.render()
-    component.componentDidMount()
-  } else {
-    return component.render()
-  }
+  component.render()
+  component.componentDidMount()
 }
