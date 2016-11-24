@@ -1,13 +1,14 @@
 import EventEmitter from 'events'
 
-import { isSaving, isBuilt } from '../selectors'
+import { isSaving, isBuilt, error } from '../selectors'
 
-const renderIndicator = ({ tagName, className, id, innerHTML }) =>
+const renderIndicator = ({ tagName, className, id, innerHTML, hidden }) =>
   `<${tagName}
     ${className ? `class='${className}'` : ''}
     ${id ? `id='${id}'` : ''}
+    ${hidden ? 'style=\'display:none\'' : ''}
     data-component='SavedIndicator'
-  ></${tagName}>`
+  >${innerHTML}</${tagName}>`
 
 export default function createSavedIndicator (ownProps, el) {
   const { store } = ownProps
@@ -34,7 +35,7 @@ export default function createSavedIndicator (ownProps, el) {
 
   function onUpdate () {
     const props = calcProps()
-    savedStore.update(props.isSaving)
+    savedStore.update(props)
   }
 
   function calcProps () {
@@ -51,22 +52,18 @@ export default function createSavedIndicator (ownProps, el) {
 function render (props, el) {
   if (!el && !props.isBuilt) return { replace: renderIndicator(props) }
   else if (!el) return { replace: '' }
-  const hidden = props.hidden
+  const display = props.hidden ? 'none' : ''
   if (props.id) el.setAttribute('id', props.id)
   else el.removeAttribute('id')
   if (props.className) el.setAttribute('class', props.className)
   else el.removeAttribute('class')
-  if (hidden !== !el.innerHTML) {
-    el.innerHTML =
-      hidden
-        ? ''
-        : props.innerHTML
-  }
+  if (display !== el.style.display) el.style.display = display
 }
 
 function mapStateToProps (state) {
   return {
     isSaving: isSaving(state),
+    error: error(state),
     isBuilt: isBuilt(state)
   }
 }
@@ -83,8 +80,8 @@ function createSavedStore ({ timeout }) {
 
   function emitHide () { eventEmitter.emit('hide') }
 
-  function update (s) {
-    if (state && !s) startTimer(++currentID)
+  function update ({ isSaving: s, error }) {
+    if (state && !s && !error) startTimer(++currentID)
     state = s
   }
 
