@@ -15,6 +15,7 @@ const writeJSON = require('write-json-file')
 const cheerio = require('cheerio')
 
 const createFsDriver = require('../lib/fs_driver')
+const { penguin: config } = require(join(process.cwd(), 'package.json'))
 
 process.on('unhandledRejection', err => { throw err })
 
@@ -33,7 +34,7 @@ co(function * () {
   const website = yield databaseDriver.getWebsite()
   const files = glob.sync(join(prefix, 'templates/pages', '*.html'))
   const ids = yield databaseDriver.getObjectIDs()
-  yield Promise.all(website.languages.map(lang => {
+  yield Promise.all(config.languages.map(lang => {
     const langOutput = join(prefix, lang)
     rm('-rf', langOutput)
     mkdir(langOutput)
