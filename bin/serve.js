@@ -29,19 +29,6 @@ const args = minimist(process.argv.slice(2))
 const defaultLanguage = process.env.npm_package_penguin_languages_0
 const staticPrefix = args['static'] || args.s || 'static'
 const ext = args['view-engine'] || args.v || 'html'
-if (!defaultLanguage) {
-  console.error('no languages in package.json specified. e.g.:')
-  console.error(
-`
-    {
-      "penguin": {
-        "languages": ["en"]
-      }
-    }
-`
-  )
-  process.exit(1)
-}
 const engine = createEngine({ drivers })
 const app = createApp({
   engine,

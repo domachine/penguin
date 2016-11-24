@@ -36,19 +36,6 @@ const drivers = {
 const args = minimist(process.argv.slice(2))
 const prefix = args.prefix || args.p || 'docs'
 const viewEngine = args['view-engine'] || args.v || 'html'
-if (!process.env.npm_package_penguin_languages_0) {
-  console.error('no languages in package.json specified. e.g.:')
-  console.error(
-`
-    {
-      "penguin": {
-        "languages": ["en"]
-      }
-    }
-`
-  )
-  process.exit(1)
-}
 const env = Object.assign({}, process.env, {
   NODE_ENV: 'production',
   BABEL_ENV: 'production'
