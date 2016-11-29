@@ -2,97 +2,88 @@
 
 'use strict'
 
-const fs = require('fs')
-const { join, dirname, basename } = require('path')
-const vm = require('vm')
-const co = require('co')
-const glob = require('glob')
-const mkdirp = require('mkdirp')
-const { cp, mkdir, rm } = require('shelljs')
-const minimist = require('minimist')
-const loadJSON = require('load-json-file')
-const writeJSON = require('write-json-file')
-const cheerio = require('cheerio')
+const { Transform } = require('stream')
+const { join } = require('path')
+const { spawn } = require('child_process')
+const { rm } = require('shelljs')
+const subarg = require('subarg')
+const mergeStream = require('merge-stream')
+const split = require('split')
 
-const createFsDriver = require('../lib/fs_driver')
 const { penguin: config } = require(join(process.cwd(), 'package.json'))
 
 process.on('unhandledRejection', err => { throw err })
 
-const args = minimist(process.argv.slice(2))
-const prefix = args['template-prefix'] || args.p || 'docs'
-const databasePrefix = args['data-prefix'] || args.d || 'data'
-const runtimePath = join(prefix, 'server_runtime.js')
-const staticFiles = join(prefix, 'static')
-const runtime = new vm.Script(fs.readFileSync(runtimePath, 'utf-8'))
-const databaseDriver = createFsDriver({ prefix: databasePrefix })
+main(subarg(process.argv.slice(2)))
 
-const hasStatic = fs.existsSync(staticFiles)
-
-co(function * () {
-  rm('-rf', join(prefix, 'data'))
-  const website = yield databaseDriver.getWebsite()
-  const files = glob.sync(join(prefix, 'templates/pages', '*.html'))
-  const ids = yield databaseDriver.getObjectIDs()
-  yield Promise.all(config.languages.map(lang => {
-    const langOutput = join(prefix, lang)
+function main (args) {
+  const runtimePath = args['server-runtime'] || args.s || 'server_runtime.js'
+  const defaultDriver = { _: ['penguin.js/lib/fs_driver'], prefix: 'data' }
+  const databaseDriverArgs = args['database-driver'] || args.d || defaultDriver
+  const basedir = args.basedir || args.b || process.cwd()
+  const prefix = args.prefix || args.p || 'docs'
+  if (typeof databaseDriverArgs !== 'object') {
+    return error('no database driver given (e.g. -d [ mydriver ])')
+  }
+  config.languages.forEach(language => {
+    const langOutput = join(prefix, language)
     rm('-rf', langOutput)
-    mkdir(langOutput)
-    if (hasStatic) cp('-R', staticFiles, langOutput)
-    Promise.all([
-      databaseDriver.getWebsite().then(website =>
-        writeJSON(join(prefix, 'data/website.json'), website, { indent: null })
-      ),
-      Promise.all(files.map(co.wrap(function * (file) {
-        const name = basename(file, '.html')
-        const page = yield databaseDriver.getPage(name)
-        const tplPath = join(prefix, 'templates/pages', name + '.json')
-        const tpl = yield loadJSONSafe(tplPath)
-        if (!tpl) return
-        const { content: template, meta } = tpl
-        const path = join(langOutput, name + '.html')
-        yield writeJSON(join(prefix, 'data/pages', name + '.json'), page, { indent: null })
-        yield writeRecordHTML(
-          path, { website, template, record: page, meta, language: lang }
-        )
-      }))),
-      Promise.all(ids.map(co.wrap(function * (id) {
-        const object = yield databaseDriver.getObject(id)
-        const tplPath = join(prefix, 'templates/objects', object.type + '.json')
-        const tpl = yield loadJSONSafe(tplPath)
-        if (!tpl) return
-        const { content: template, meta } = tpl
-        const path = join(langOutput, object.type, id + '.html')
-        yield writeJSON(join(prefix, 'data/objects', id + '.json'), object, { indent: null })
-        yield writeRecordHTML(
-          path, { website, template, record: object, meta, language: lang }
-        )
-      })))
-    ])
-  }))
-})
-
-function writeRecordHTML (
-  outputFile, { website, template, record, meta, language }
-) {
-  return new Promise((resolve, reject) => {
-    mkdirp(dirname(outputFile), err => {
-      if (err) return reject(err)
-      const output = fs.createWriteStream(outputFile)
-      const data = { website, meta, record }
-      const ctx = vm.createContext({
-        __params: { data, language, html: cheerio.load(template) }
-      })
-      runtime.runInContext(ctx)
-      output.write(ctx.__params.output)
-      output.end()
-    })
   })
+  const objects = createJSONStream(`${__dirname}/scan_objects.js`,
+    ['--basedir', basedir, '--database-driver', '[']
+      .concat(toArguments(databaseDriverArgs))
+      .concat([']', '--languages', '['])
+      .concat(config.languages).concat([']']))
+  const pages = createJSONStream(`${__dirname}/scan_pages.js`,
+    ['--prefix', prefix, '--basedir', basedir, '--languages', '[']
+      .concat(config.languages).concat([']'])
+      .concat(['--database-driver', '['])
+      .concat(toArguments(databaseDriverArgs))
+      .concat([']']))
+  const render = spawn(`${__dirname}/render_html.js`,
+    [
+      '--prefix', prefix,
+      '--basedir', basedir,
+      '--server-runtime', runtimePath,
+      '--languages', '['
+    ]
+    .concat(config.languages).concat([']'])
+    .concat(['--database-driver', '['])
+    .concat(toArguments(databaseDriverArgs))
+    .concat([']']),
+    { stdio: ['pipe', 'inherit', 'inherit'] })
+  mergeStream(objects, pages)
+    .pipe(new Transform({
+      transform (chunk, enc, callback) {
+        callback(null, chunk.toString() + '\n')
+      }
+    }))
+    .pipe(render.stdin)
 }
 
-function loadJSONSafe (p) {
-  return loadJSON(p).catch(err => {
-    if (err.code === 'ENOENT') return null
-    throw err
-  })
+function error (msg) {
+  console.error(msg)
+  process.exit(1)
+}
+
+function toArguments (o) {
+  return Object.keys(o).reduce((args, key) =>
+    args
+      .concat(
+        key === '_'
+          ? []
+          : [key.length === 1 ? `-${key}` : `--${key}`]
+      )
+      .concat(
+        Array.isArray(o[key])
+          ? o[key]
+          : [o[key]]
+      )
+  , [])
+}
+
+function createJSONStream (path, args) {
+  const stdio = ['ignore', 'pipe', 'inherit']
+  const proc = spawn(path, args, { stdio })
+  return proc.stdout.pipe(split(null, null, { trailing: false }))
 }

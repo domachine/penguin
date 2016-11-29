@@ -8,6 +8,7 @@ const renderIndicator = ({ tagName, className, id, innerHTML, hidden }) =>
     ${id ? `id='${id}'` : ''}
     ${hidden ? 'style=\'display:none\'' : ''}
     data-component='SavedIndicator'
+    data-props='${JSON.stringify({ tagName, className, id, innerHTML })}'
   >${innerHTML}</${tagName}>`
 
 export default function createSavedIndicator (ownProps, el) {

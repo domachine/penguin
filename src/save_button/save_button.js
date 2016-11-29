@@ -1,4 +1,5 @@
 import { isSaving, isBuilt } from '../selectors'
+import { save } from '../actions'
 
 const renderButton = ({ className, id, innerHTML }, disabled) =>
   `<button
@@ -6,6 +7,7 @@ const renderButton = ({ className, id, innerHTML }, disabled) =>
     ${className ? `class='${className}'` : ''}
     ${id ? `id='${id}'` : ''}
     data-component='SaveButton'
+    data-props='${JSON.stringify({ className, id, innerHTML })}'
     ${disabled ? 'disabled=\'disabled\'' : ''}
   >${innerHTML}</button>`
 
@@ -21,7 +23,7 @@ export default function createSaveButton (ownProps, el) {
 
   function onClick (e) {
     e.preventDefault()
-    ownProps.penguin.save()
+    store.dispatch(save())
   }
 
   function onUpdate () {

@@ -1,14 +1,15 @@
+import shortid from 'shortid'
+
 import {
   globalFields,
+  globalNoLangFields,
   currentLanguage,
   localFields,
-  localNoLangFields,
-  globalNoLangFields
+  localNoLangFields
 } from './selectors'
 
 export const HYDRATE = 'HYDRATE'
-export const UPDATE_LOCAL_FIELDS = 'UPDATE_LOCAL_FIELDS'
-export const UPDATE_GLOBAL_FIELDS = 'UPDATE_GLOBAL_FIELDS'
+export const UPDATE_FIELDS = 'UPDATE_FIELDS'
 export const SET_EDITABLE = 'SET_EDITABLE'
 export const LOAD = 'LOAD'
 export const LOAD_SUCCESS = 'LOAD_SUCCESS'
@@ -16,79 +17,35 @@ export const LOAD_FAILURE = 'LOAD_FAILURE'
 export const SAVE = 'SAVE'
 export const SAVE_SUCCESS = 'SAVE_SUCCESS'
 export const SAVE_FAILURE = 'SAVE_FAILURE'
-export const SWITCH_LANGUAGE = 'SWITCH_LANGUAGE'
 
-export function updateLocalFields (update) {
-  return { type: UPDATE_LOCAL_FIELDS, update }
-}
-
-export function updateGlobalFields (update) {
-  return { type: UPDATE_GLOBAL_FIELDS, update }
-}
-
-export function update (update) {
+export function loadState ({ stateLoader, pathname }) {
   return (dispatch, getState) => {
-    const state = getState()
-    const globalKeys = Object.keys(globalFields(state))
-    const updates = Object.keys(update)
-      .map(key =>
-        globalKeys.indexOf(key) !== -1
-          ? { type: 'global', update: [key, update[key]] }
-          : { type: 'local', update: [key, update[key]] }
-      )
-      .reduce(
-        (updates, update) =>
-          update.type === 'global'
-            ? Object.assign({}, updates, {
-              global: Object.assign({}, updates.global, {
-                [update.update[0]]: update.update[1]
-              })
-            })
-            : Object.assign({}, updates, {
-              local: Object.assign({}, updates.local, {
-                [update.update[0]]: update.update[1]
-              })
-            }),
-        {}
-      )
-    if (updates.local) {
-      const opts = {
-        currentLanguage: currentLanguage(state),
-        fields: localFields(state),
-        noLangFields: localNoLangFields(state)
-      }
-      dispatch(updateLocalFields(spreadToLanguage(opts, updates.local)))
-    }
-    if (updates.global) {
-      const opts = {
-        currentLanguage: currentLanguage(state),
-        fields: globalFields(state),
-        noLangFields: globalNoLangFields(state)
-      }
-      dispatch(updateGlobalFields(spreadToLanguage(opts, updates.global)))
-    }
+    dispatch({ type: LOAD, pathname })
+    const { context: { isNew, match } } = getState()
+    const promise =
+      match.length === 4
+        ? stateLoader.loadObjectState({
+          language: match[1],
+          type: match[2],
+          id: match[3],
+          isNew
+        })
+        : stateLoader.loadPageState({
+          language: match[1],
+          name: match[2] || 'index'
+        })
+    return promise
+      .then(state => {
+        dispatch({ type: HYDRATE, state })
+        dispatch({ type: LOAD_SUCCESS })
+      }, err => {
+        dispatch({ type: LOAD_FAILURE, error: err })
+      })
   }
 }
 
-function spreadToLanguage ({ currentLanguage, noLangFields, fields }, update) {
-  return Object.keys(update)
-    .reduce(
-      (updates, key) =>
-        noLangFields.indexOf(key) === -1
-          ? Object.assign({}, updates, {
-            [key]: {
-              values: Object.assign({}, (fields[key] || {}).values, {
-                [currentLanguage]: update[key]
-              })
-            }
-          })
-          : Object.assign({}, updates, {
-            [key]: {
-              value: update[key]
-            }
-          }),
-      {}
-    )
+export function update (update) {
+  return { type: UPDATE_FIELDS, update }
 }
 
 export function setEditable (value) {
@@ -96,7 +53,34 @@ export function setEditable (value) {
 }
 
 export function save () {
-  return { type: SAVE }
+  return (dispatch, getState) => {
+    const state = getState()
+    if (state.isLoading) return
+    const { isNew, match } = state.context
+    const pathname =
+      match[3] === 'new'
+        ? `/${match[1]}/${match[2]}/${shortid()}`
+        : ((match.length === 3 && !match[2])
+          ? `/${match[1]}/index`
+          : match[0])
+    dispatch({ type: SAVE })
+    return Promise.all([
+      saveFields('', globalFields(state), {
+        noLang: globalNoLangFields(state),
+        language: currentLanguage(state)
+      }),
+      saveFields(pathname.replace(/^\/[^/]+\/?/, '/'), localFields(state), {
+        noLang: localNoLangFields(state),
+        language: currentLanguage(state)
+      })
+    ])
+    .then(([website, record]) => {
+      dispatch({ type: SAVE_SUCCESS })
+      if (isNew) window.location.href = pathname
+    }, err => {
+      dispatch({ type: SAVE_FAILURE, error: err })
+    })
+  }
 }
 
 export function saveSuccess () {
@@ -107,6 +91,42 @@ export function saveFailure () {
   return { type: SAVE_FAILURE }
 }
 
-export function switchLanguage (lang) {
-  return { type: SWITCH_LANGUAGE, lang }
+function saveFields (pathname, data, { noLang, language }) {
+  const { notLocalized, translated } = spreadFields(data, { noLang })
+  return Promise.all([
+    window.fetch(`/not_localized${pathname}.json`, {
+      method: 'PUT',
+      credentials: 'same-origin',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(notLocalized)
+    }),
+    window.fetch(`/${language}${pathname}.json`, {
+      method: 'PUT',
+      credentials: 'same-origin',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(translated)
+    })
+  ])
+}
+
+function spreadFields (data, { noLang }) {
+  const notLocalized =
+    Object.keys(data)
+      .reduce((fields, key) =>
+        noLang.indexOf(key) > -1
+          ? Object.assign({}, fields, { [key]: data[key] })
+          : fields
+      , {})
+  const translated =
+    Object.keys(data)
+      .reduce((fields, key) =>
+        noLang.indexOf(key) === -1
+          ? Object.assign({}, fields, { [key]: data[key] })
+          : fields
+      , {})
+  return { notLocalized, translated }
 }

@@ -1,8 +1,9 @@
 import { combineReducers } from 'redux'
 
+import { object as objectPathRegexp, page as pagePathRegexp } from './path_regexps'
+
 import {
-  UPDATE_LOCAL_FIELDS,
-  UPDATE_GLOBAL_FIELDS,
+  UPDATE_FIELDS,
   SET_EDITABLE,
   LOAD,
   LOAD_SUCCESS,
@@ -10,15 +11,16 @@ import {
   SAVE,
   SAVE_SUCCESS,
   SAVE_FAILURE,
-  SWITCH_LANGUAGE,
   HYDRATE
 } from '../actions'
 
 export default combineReducers({
+  fields,
   locals,
   globals,
   languages,
   currentLanguage,
+  context,
   isEditable,
   isLoading,
   isSaving,
@@ -26,12 +28,19 @@ export default combineReducers({
   isBuilt
 })
 
+function fields (state = {}, action) {
+  switch (action.type) {
+    case UPDATE_FIELDS:
+      return Object.assign({}, state, action.update)
+    case HYDRATE:
+      return action.state.fields
+    default:
+      return state
+  }
+}
+
 function locals (state = {}, action) {
   switch (action.type) {
-    case UPDATE_LOCAL_FIELDS:
-      return Object.assign({}, state, {
-        fields: Object.assign({}, state.fields, action.update)
-      })
     case HYDRATE:
       return action.state.locals
     default:
@@ -41,10 +50,6 @@ function locals (state = {}, action) {
 
 function globals (state = {}, action) {
   switch (action.type) {
-    case UPDATE_GLOBAL_FIELDS:
-      return Object.assign({}, state, {
-        fields: Object.assign({}, state.fields, action.update)
-      })
     case HYDRATE:
       return action.state.globals
     default:
@@ -63,8 +68,6 @@ function languages (state = [], action) {
 
 function currentLanguage (state = null, action) {
   switch (action.type) {
-    case SWITCH_LANGUAGE:
-      return action.lang
     case HYDRATE:
       return action.state.currentLanguage
     default:
@@ -117,6 +120,27 @@ function error (state = null, action) {
     case SAVE_FAILURE:
     case LOAD_FAILURE:
       return action.error
+    default:
+      return state
+  }
+}
+
+function context (state = null, action) {
+  switch (action.type) {
+    case LOAD: {
+      const match =
+        action.pathname.match(objectPathRegexp) ||
+        action.pathname.match(pagePathRegexp)
+      return match.length === 4
+        ? {
+          match,
+          language: match[1],
+          type: match[2],
+          id: match[3],
+          isNew: match[3] === 'new'
+        }
+        : { match, language: match[1], name: match[2] || 'index' }
+    }
     default:
       return state
   }

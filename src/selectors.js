@@ -1,17 +1,31 @@
 import { createSelector } from 'reselect'
 
 export const localFields = createSelector(
-  ({ locals: { fields } }) => fields,
-  data => data || {}
+  ({ fields }) => fields,
+  globalKeys,
+  (fields, globalKeys) =>
+    Object.keys(fields)
+      .reduce((localFields, key) =>
+        globalKeys.indexOf(key) === -1
+          ? Object.assign({}, localFields, { [key]: fields[key] })
+          : localFields
+      , {})
 )
 
 export const globalFields = createSelector(
-  ({ globals }) => globals,
-  globals => (globals || {}).fields || {}
+  ({ fields }) => fields,
+  globalKeys,
+  (fields, globalKeys) =>
+    Object.keys(fields)
+      .reduce((globalFields, key) =>
+        globalKeys.indexOf(key) > -1
+          ? Object.assign({}, globalFields, { [key]: fields[key] })
+          : globalFields
+      , {})
 )
 
-export const localNoLangFields = ({ locals: { noLangFields } }) => noLangFields
-export const globalNoLangFields = ({ globals: { noLangFields } }) => noLangFields
+export const localNoLangFields = ({ locals: { notLocalized } }) => notLocalized
+export const globalNoLangFields = ({ globals: { notLocalized } }) => notLocalized
 
 export const currentLanguage = createSelector(
   ({ currentLanguage }) => currentLanguage,
@@ -41,41 +55,14 @@ export function error ({ error }) {
   return error
 }
 
-export function createValueSelector () {
-  return createSelector(
-    localNoLangFields,
-    globalNoLangFields,
-    localFields,
-    globalFields,
-    currentLanguage,
-    (state, name) => name,
-    (
-      localNoLangFields,
-      globalNoLangFields,
-      localFields,
-      globalFields,
-      currentLanguage,
-      name
-    ) => {
-      const isGlobal = Object.keys(globalFields).indexOf(name) !== -1
-      if (!currentLanguage) return
-      return extractField(
-        {
-          currentLanguage,
-          noLangFields: (isGlobal ? globalNoLangFields : localNoLangFields)
-        },
-        name,
-        (isGlobal ? globalFields : localFields)[name]
-      )
-    }
-  )
+export function globalKeys ({ globals: { keys } }) {
+  return keys
 }
 
-function extractField ({ currentLanguage, noLangFields }, name, field) {
-  if (noLangFields.indexOf(name) === -1) {
-    const values = (field || {}).values || {}
-    return values[currentLanguage]
-  } else {
-    return (field || {}).value
-  }
+export function createValueSelector () {
+  return createSelector(
+    ({ fields }) => fields,
+    (state, name) => name,
+    (fields, name) => fields[name]
+  )
 }

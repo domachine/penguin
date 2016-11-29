@@ -16,7 +16,8 @@ if (!command) {
   console.error('unrecognized command!')
   process.exit(1)
 }
-if (!process.env.npm_package_penguin_languages_0) {
+const pkg = require(`${process.cwd()}/package.json`).penguin
+if (!Array.isArray(pkg.languages)) {
   console.error('no languages in package.json specified. e.g.:')
   console.error(
 `

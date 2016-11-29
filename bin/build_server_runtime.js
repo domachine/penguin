@@ -31,8 +31,8 @@ function js ({ name }) {
 import createStateSerializer from '${name}/lib/state_serializer'
 import components from './server_components'
 import { penguin as config } from './package.json'
-const { html, data, language } = __params
-const stateSerializer = createStateSerializer({ config, language })
+const { html, data } = __params
+const stateSerializer = createStateSerializer({ config })
 const renderer = createServerRenderer({
   components,
   state: Object.assign({}, stateSerializer(data), { isBuilt: true })

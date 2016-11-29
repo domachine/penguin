@@ -5,7 +5,7 @@
 const fs = require('fs')
 const { join } = require('path')
 const { spawn, spawnSync } = require('child_process')
-const minimist = require('minimist')
+const subarg = require('subarg')
 const browserify = require('browserify')
 const watchify = require('watchify')
 const mkdirp = require('mkdirp')
@@ -18,6 +18,7 @@ const createEngine = require('../lib/engine')
 const createDustDriver = require('../lib/dust_driver')
 const createPugDriver = require('../lib/pug_driver')
 const createFsDriver = require('../lib/fs_driver')
+const createDevelopmentDriver = require('../lib/development_driver')
 const pkg = require('../package.json')
 
 const drivers = {
@@ -25,17 +26,25 @@ const drivers = {
   pug: createPugDriver
 }
 
-const args = minimist(process.argv.slice(2))
-const defaultLanguage = process.env.npm_package_penguin_languages_0
+const args = subarg(process.argv.slice(2))
 const staticPrefix = args['static'] || args.s || 'static'
 const ext = args['view-engine'] || args.v || 'html'
+const { languages } = require(`${process.cwd()}/package.json`).penguin
 const engine = createEngine({ drivers })
-const app = createApp({
+if (process.env.NODE_ENV === 'production') {
+  console.error('WARNING! You\'re running penguin.js in production but it\'s not ready, yet!')
+}
+const viewDriver = createDevelopmentDriver({
   engine,
   ext,
+  prefix: '.',
   staticPrefix,
-  defaultLanguage,
-  dataPrefix: 'data',
+  filesPrefix: 'files',
+  languages,
+  dataPrefix: 'data'
+})
+const app = createApp({
+  viewDriver,
   databaseDriver: createFsDriver({ prefix: 'data' })
 })
 spawnSync(`${__dirname}/create_component_map.js`, [

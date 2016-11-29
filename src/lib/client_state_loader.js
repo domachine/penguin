@@ -1,38 +1,29 @@
 export default function createStateLoader ({ stateSerializer, fetch }) {
   return {
-    loadObjectState ({ type, id }) {
+    loadObjectState ({ language, type, id, isNew }) {
       return load([
-        loadWebsite(),
-        loadTemplate('objects/' + type),
-        id
-          ? window.fetch(`/data/objects/${id}.json`, { credentials: 'same-origin' })
-          : Promise.resolve(() => ({ type, fields: {} }))
+        loadJSON(`/objects/${type}.json`),
+        loadJSON(`/${language}/${type}/${id}.json`)
       ])
     },
 
-    loadPageState ({ name }) {
+    loadPageState ({ language, name }) {
       return load([
-        loadWebsite(),
-        loadTemplate('pages/' + name),
-        window.fetch(`/data/pages/${name}.json`)
+        loadJSON(`/pages/${name}.json`),
+        loadJSON(`/${language}/${name}.json`)
       ])
     }
   }
 
-  function loadWebsite () {
-    return fetch('/data/website.json', { credentials: 'same-origin' })
-  }
-
-  function loadTemplate (name) {
-    return fetch(`/templates/${name}.json`, { credentials: 'same-origin' })
+  function loadJSON (path) {
+    return fetch(path, { credentials: 'same-origin' })
+      .then(res => res.json())
   }
 
   function load (requests) {
-    const promises = Promise.all(requests.map(p => p.then(res => res.json())))
-    return promises.then(([website, { meta }, record]) => ({
-      state: stateSerializer({ website, meta, record }),
-      website,
-      record
-    }))
+    const promises = Promise.all(requests)
+    return promises.then(([meta, fields]) =>
+      stateSerializer({ meta, fields })
+    )
   }
 }

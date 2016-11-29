@@ -7,7 +7,7 @@ const fs = require('fs')
 const { spawn, spawnSync } = require('child_process')
 const { cp, mkdir, rm } = require('shelljs')
 const glob = require('glob')
-const minimist = require('minimist')
+const subarg = require('subarg')
 const mkdirp = require('mkdirp')
 const loadJSON = require('load-json-file')
 const writeJSON = require('write-json-file')
@@ -33,9 +33,11 @@ const drivers = {
   pug: createPugDriver
 }
 
-const args = minimist(process.argv.slice(2))
+const args = subarg(process.argv.slice(2))
 const prefix = args.prefix || args.p || 'docs'
 const viewEngine = args['view-engine'] || args.v || 'html'
+const serverRuntimePath =
+  args['server-runtime'] || args.s || 'server_runtime.js'
 const env = Object.assign({}, process.env, {
   NODE_ENV: 'production',
   BABEL_ENV: 'production'
@@ -60,7 +62,7 @@ mkdir('-p', join(prefix, 'static'))
 if (fs.existsSync('static')) rm('-f', 'static/client.js')
 const opts = { stdio: ['ignore', 'pipe', 'inherit'], env }
 spawn(`${__dirname}/build_server_runtime.js`, [], opts)
-  .stdout.pipe(fs.createWriteStream(join(prefix, 'server_runtime.js')))
+  .stdout.pipe(fs.createWriteStream(serverRuntimePath))
 spawn(`${__dirname}/build_client_runtime.js`, [], opts)
   .stdout.pipe(fs.createWriteStream(join(prefix, 'static', 'client.js')))
 const files = glob.sync('@(objects|pages)/*.' + viewEngine)
@@ -69,24 +71,22 @@ Promise.all(
     const d = dirname(file)
     const e = extname(file)
     const b = basename(file, e)
-    const htmlOutput = join(prefix, 'templates', d, b + '.html')
-    const jsonOutput = join(prefix, 'templates', d, b + '.json')
-    const metaJSON = join(d, b + '.meta.json')
+    const htmlOutput = join(prefix, d, b + '.html')
+    const jsonOutput = join(prefix, d, b + '.json')
+    const metaJSON = join(d, b + '.json')
     return Promise.all([
-      mkdirpAsync(dirname(htmlOutput))
-        .then(() => engine(file, { signature: [d.slice(0, -1), b] })),
+      mkdirpAsync(dirname(htmlOutput)).then(() => engine(file)),
       loadJSON(metaJSON).catch(err => {
         if (err.code === 'ENOENT') return {}
         throw err
       })
     ])
-    .then(([content, meta]) => {
-      const json = { content, meta }
-      return Promise.all([
+    .then(([content, meta]) =>
+      Promise.all([
         writeFileAsync(htmlOutput, content),
-        writeJSON(jsonOutput, json, { indent: null })
+        writeJSON(jsonOutput, meta, { indent: null })
       ])
-    })
+    )
   })
 )
 if (fs.existsSync('static')) cp('-R', 'static', prefix)
