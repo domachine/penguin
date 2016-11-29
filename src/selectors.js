@@ -28,9 +28,8 @@ export const localNoLangFields = ({ locals: { notLocalized } }) => notLocalized
 export const globalNoLangFields = ({ globals: { notLocalized } }) => notLocalized
 
 export const currentLanguage = createSelector(
-  ({ currentLanguage }) => currentLanguage,
-  ({ languages }) => languages[0],
-  (currentLanguage, defaultLanguage) => currentLanguage || defaultLanguage
+  ({ context }) => context,
+  context => context && context.language
 )
 
 export const languages = ({ languages }) => languages

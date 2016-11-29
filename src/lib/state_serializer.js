@@ -12,7 +12,7 @@ export default function createStateSerializer ({ config }) {
         notLocalized: globalNotLocalized
       },
       languages: config.languages,
-      currentLanguage: language || config.languages[0]
+      context: language ? { language } : null
     }
   }
 }

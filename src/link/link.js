@@ -1,3 +1,5 @@
+import { currentLanguage } from '../selectors'
+
 const renderLink = ({ currentLanguage, className, id, href, innerHTML }) =>
   `<a
     ${className ? `class='${className}'` : ''}
@@ -46,6 +48,6 @@ function render (props, el) {
 
 function mapStateToProps (state) {
   return {
-    currentLanguage: state.currentLanguage
+    currentLanguage: currentLanguage(state)
   }
 }

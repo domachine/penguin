@@ -19,7 +19,6 @@ export default combineReducers({
   locals,
   globals,
   languages,
-  currentLanguage,
   context,
   isEditable,
   isLoading,
@@ -61,15 +60,6 @@ function languages (state = [], action) {
   switch (action.type) {
     case HYDRATE:
       return action.state.languages
-    default:
-      return state
-  }
-}
-
-function currentLanguage (state = null, action) {
-  switch (action.type) {
-    case HYDRATE:
-      return action.state.currentLanguage
     default:
       return state
   }
