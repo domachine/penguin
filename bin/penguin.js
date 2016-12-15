@@ -8,6 +8,7 @@ const commands = {
   build: 'build.js',
   pack: 'pack.js',
   serve: 'serve.js',
+  run: 'run.js',
   generate: 'generate.js'
 }
 
