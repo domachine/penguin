@@ -44,6 +44,7 @@ const viewDriver = createDevelopmentDriver({
   dataPrefix: 'data'
 })
 const app = createApp({
+  languages,
   viewDriver,
   databaseDriver: createFsDriver({ prefix: 'data' })
 })
