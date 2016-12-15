@@ -7,6 +7,7 @@ const resolveMod = require('resolve')
 
 const createApp = require('../lib/app')
 
+process.on('unhandledRejection', err => { throw err })
 main(subarg(process.argv.slice(2)))
 
 function main (args) {
