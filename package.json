@@ -47,6 +47,8 @@
     "merge-stream": "^1.0.1",
     "minimist": "^1.2.0",
     "mkdirp": "^0.5.1",
+    "pg": "^6.1.2",
+    "pg-query-stream": "^1.0.0",
     "pug": "^2.0.0-beta6",
     "redux": "^3.6.0",
     "redux-thunk": "^2.1.0",
