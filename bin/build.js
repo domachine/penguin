@@ -18,7 +18,7 @@ main(subarg(process.argv.slice(2)))
 
 function main (args) {
   const runtimePath = args['server-runtime'] || args.s || 'server_runtime.js'
-  const defaultDriver = { _: ['penguin.js/lib/fs_driver'], prefix: 'data' }
+  const defaultDriver = { _: ['penguin.js/fs'], prefix: 'data' }
   const databaseDriverArgs = args['database-driver'] || args.d || defaultDriver
   const basedir = args.basedir || args.b || process.cwd()
   const prefix = args.prefix || args.p || 'docs'

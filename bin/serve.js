@@ -17,7 +17,7 @@ const createClientRuntimeScript = require('../lib/client_runtime_script')
 const createEngine = require('../lib/engine')
 const createDustDriver = require('../lib/dust_driver')
 const createPugDriver = require('../lib/pug_driver')
-const createFsDriver = require('../lib/fs_driver')
+const createFsDriver = require('../fs')
 const createDevelopmentDriver = require('../lib/development_driver')
 const pkg = require('../package.json')
 

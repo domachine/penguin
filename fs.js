@@ -9,7 +9,7 @@ const writeJSON = require('write-json-file')
 const {
   object: objectPathRegexp,
   page: pagePathRegexp
-} = require('../lib/path_regexps')
+} = require('./lib/path_regexps')
 
 module.exports = createDatabase
 

@@ -13,7 +13,7 @@ main(subarg(process.argv.slice(2)))
 function main (args) {
   const { languages } = require(`${process.cwd()}/package.json`).penguin
   const databaseDriverArgs = args['database-driver'] || args.d || {
-    _: ['penguin.js/lib/fs_driver']
+    _: ['penguin.js/fs']
   }
   const viewDriverArgs = args['view-driver'] || args.v || {
     _: ['penguin.js/lib/production_driver']
