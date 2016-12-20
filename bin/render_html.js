@@ -81,11 +81,11 @@ function createOutputStream ({ prefix, databaseDriver, writer }) {
         if (tpl == null) return
         return (
           (chunk.object
-            ? databaseDriver.getObjectLocals({
+            ? databaseDriver.getObject({
               type: chunk.object.type,
               id: chunk.object.id
             })
-            : databaseDriver.getPageLocals({ name: chunk.page.name })
+            : databaseDriver.getPage({ name: chunk.page.name })
           )
           .then(notLocalized => {
             const fields = Object.assign({}, value, notLocalized, globals)
