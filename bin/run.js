@@ -18,35 +18,45 @@ function main (args) {
   const viewDriverArgs = args['view-driver'] || args.v || {
     _: ['penguin.js/lib/production_driver']
   }
+  const middlewareArgs = args['middleware'] || args.m
   const basedir = args.basedir || args.b || process.cwd()
   if (typeof databaseDriverArgs !== 'object') {
     return error('no database driver given (e.g. -d [ mydriver ])')
   }
-  const databaseDriverModule = databaseDriverArgs._.shift()
   if (typeof viewDriverArgs !== 'object') {
     return error('no view driver given (e.g. -d [ mydriver ])')
   }
-  const viewDriverModule = viewDriverArgs._.shift()
+  const middleware =
+    Array.isArray(middlewareArgs)
+      ? middlewareArgs
+      : (middlewareArgs ? [middlewareArgs] : [])
   Promise.all([
-    new Promise((resolve, reject) => {
-      resolveMod(databaseDriverModule, { basedir }, (err, p) => {
-        if (err) return reject(err)
-        const createDriver = require(p)
-        resolve(createDriver(databaseDriverArgs))
-      })
-    }),
-    new Promise((resolve, reject) => {
-      resolveMod(viewDriverModule, { basedir }, (err, p) => {
-        if (err) return reject(err)
-        const createDriver = require(p)
-        resolve(createDriver(viewDriverArgs))
-      })
-    })
+    createModuleFromArgs(databaseDriverArgs, { basedir }),
+    createModuleFromArgs(viewDriverArgs, { basedir }),
+    Promise.all(middleware.map(a =>
+      createModuleFromArgs(a, { basedir })
+    ))
   ])
-  .then(([databaseDriver, viewDriver]) => {
-    const app = createApp({ viewDriver, databaseDriver, languages })
+  .then(([databaseDriver, viewDriver, middleware]) => {
+    const app = createApp({ viewDriver, databaseDriver, languages, middleware })
     app.listen(process.env.PORT || 3000, () => {
       console.log('> Ready on port ' + (process.env.PORT || 3000))
+    })
+  })
+}
+
+function createModuleFromArgs (a, opts) {
+  const name = a._[0]
+  const args = Object.assign({}, a, { _: a._.slice(1) })
+  return createModule(name, opts, args)
+}
+
+function createModule (mod, opts, ...args) {
+  return new Promise((resolve, reject) => {
+    resolveMod(mod, opts, (err, p) => {
+      if (err) return reject(err)
+      const constructor = require(p)
+      resolve(constructor(...args))
     })
   })
 }
