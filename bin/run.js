@@ -20,6 +20,7 @@ function main (args) {
   }
   const middlewareArgs = args['middleware'] || args.m
   const basedir = args.basedir || args.b || process.cwd()
+  const port = args.port || args.p || 3000
   if (typeof databaseDriverArgs !== 'object') {
     return error('no database driver given (e.g. -d [ mydriver ])')
   }
@@ -39,8 +40,8 @@ function main (args) {
   ])
   .then(([databaseDriver, viewDriver, middleware]) => {
     const app = createApp({ viewDriver, databaseDriver, languages, middleware })
-    app.listen(process.env.PORT || 3000, () => {
-      console.log('> Ready on port ' + (process.env.PORT || 3000))
+    app.listen(port, () => {
+      console.log('> Ready on port ' + port)
     })
   })
 }
