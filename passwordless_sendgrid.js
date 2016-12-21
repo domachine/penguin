@@ -15,7 +15,7 @@ module.exports = ({
   })
   return (tokenToSend, uidToSend, recipient, callback) => {
     transport.sendMail({
-      subject: 'Penguin',
+      subject,
       from,
       to: recipient,
       text:
