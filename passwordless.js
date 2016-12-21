@@ -3,7 +3,7 @@
 const url = require('url')
 const passwordless = require('passwordless')
 const RedisStore = require('passwordless-redisstore')
-const parse = require('parse-redis-url')
+const { parse } = require('parse-redis-url')()
 const resolveMod = require('resolve')
 const { Router } = require('express')
 const session = require('express-session')
