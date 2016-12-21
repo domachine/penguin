@@ -33,6 +33,7 @@ const drivers = {
   pug: createPugDriver
 }
 
+const { penguin: { languages } } = require(`${process.cwd()}/package.json`)
 const args = subarg(process.argv.slice(2))
 const prefix = args.prefix || args.p || 'docs'
 const viewEngine = args['view-engine'] || args.v || 'html'
@@ -58,6 +59,9 @@ const engine = createEngine({
 rm('-rf', prefix)
 if (fs.existsSync('files')) cp('-R', 'files', prefix)
 else mkdir('-p', prefix)
+if (!fs.existsSync(join(prefix, 'index.html'))) {
+  fs.writeFileSync(join(prefix, 'index.html'), renderIndexHTML({ languages }))
+}
 mkdir('-p', join(prefix, 'static'))
 if (fs.existsSync('static')) rm('-f', 'static/client.js')
 const opts = { stdio: ['ignore', 'pipe', 'inherit'], env }
@@ -90,3 +94,18 @@ Promise.all(
   })
 )
 if (fs.existsSync('static')) cp('-R', 'static', prefix)
+
+function renderIndexHTML ({ languages }) {
+  return `
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Redirecting ...</title>
+    <meta http-equiv='refresh' content='0; URL=/${languages[0]}/'>
+  </head>
+  <body>
+    Redirecting <a href='/${languages[0]}/'>here</a> ...
+  </body>
+</html>
+`
+}
