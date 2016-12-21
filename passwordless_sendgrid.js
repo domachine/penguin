@@ -4,14 +4,15 @@ const nodemailer = require('nodemailer')
 
 module.exports = ({
   subject = 'Penguin.js passwordless',
-  'api-key': apiKey,
+  user,
+  pass,
   from,
   url
 }) => {
   if (!from) throw new Error('Need a from parameter')
   const transport = nodemailer.createTransport({
     service: 'SendGrid',
-    auth: { user: 'apikey', pass: apiKey }
+    auth: { user, pass }
   })
   return (tokenToSend, uidToSend, recipient, callback) => {
     transport.sendMail({
