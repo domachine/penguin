@@ -15,12 +15,14 @@ module.exports = ({
   'redis-url': redisURL,
   'pg-url': postgresURL,
   'failure-redirect': failureRedirect,
+  'sent-redirect': sentRedirect,
   ssl,
   delivery,
   basedir = process.cwd(),
   cookie
 }) => {
   if (typeof delivery !== 'object') throw new Error('Need a delivery plugin!')
+  if (!sentRedirect) sentRedirect = failureRedirect
   const u = parse(redisURL)
   const { host, port } = u
   delete u.host
@@ -59,21 +61,22 @@ module.exports = ({
         passwordless.requestToken(
           // Turn the email address into an user ID
           (user, delivery, callback, req) => {
-            console.log('query', user)
             pool.query('SELECT user_id FROM users WHERE email = $1', [user])
               .then(r => {
                 if (!r.rowCount) return callback(null, null)
-                console.log(r.rows[0])
                 callback(null, r.rows[0].user_id)
               }, callback)
           }, { failureRedirect }),
-        (req, res) => res.redirect('/'))
+        (req, res) => res.redirect(sentRedirect))
       const makePublic = (req, res, next) => {
         res.locals.public = true
         next()
       }
       router.use('/static', makePublic)
       if (failureRedirect) router.get(failureRedirect, makePublic)
+      if (sentRedirect !== failureRedirect) {
+        router.get(sentRedirect, makePublic)
+      }
       const restricted = passwordless.restricted({ failureRedirect })
       router.use((req, res, next) => {
         if (!res.locals.public) restricted(req, res, next)
