@@ -54,6 +54,9 @@ function main (args) {
         runtime,
         output
       }))
+      .on('finish', () => {
+        if (databaseDriver.close) databaseDriver.close()
+      })
   })
 }
 
