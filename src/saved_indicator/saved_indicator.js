@@ -2,14 +2,8 @@ import EventEmitter from 'events'
 
 import { isSaving, isBuilt, error } from '../selectors'
 
-const renderIndicator = ({ tagName, className, id, innerHTML, hidden }) =>
-  `<${tagName}
-    ${className ? `class='${className}'` : ''}
-    ${id ? `id='${id}'` : ''}
-    ${hidden ? 'style=\'display:none\'' : ''}
-    data-component='SavedIndicator'
-    data-props='${JSON.stringify({ tagName, className, id, innerHTML })}'
-  >${innerHTML}</${tagName}>`
+const renderStyle = ({ hidden }) =>
+  hidden ? 'display:none' : ''
 
 export default function createSavedIndicator (ownProps, el) {
   const { store } = ownProps
@@ -41,23 +35,14 @@ export default function createSavedIndicator (ownProps, el) {
 
   function calcProps () {
     const storeState = store.getState()
-    return Object.assign({
-      tagName: ownProps.tagName || 'div',
-      innerHTML: ownProps.innerHTML || '',
-      className: ownProps.className || '',
-      id: ownProps.id || ''
-    }, mapStateToProps(storeState), state)
+    return Object.assign({}, mapStateToProps(storeState), state)
   }
 }
 
 function render (props, el) {
-  if (!el && !props.isBuilt) return { replace: renderIndicator(props) }
+  if (!el && !props.isBuilt) return { attrs: { style: renderStyle(props) } }
   else if (!el) return { replace: '' }
   const display = props.hidden ? 'none' : ''
-  if (props.id) el.setAttribute('id', props.id)
-  else el.removeAttribute('id')
-  if (props.className) el.setAttribute('class', props.className)
-  else el.removeAttribute('class')
   if (display !== el.style.display) el.style.display = display
 }
 
