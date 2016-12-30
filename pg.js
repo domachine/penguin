@@ -81,18 +81,21 @@ module.exports = ({ url, ssl = false }) => {
     getPages ({ language }) {
       const statement =
         language === undefined
-          ? 'SELECT * FROM pages WHERE language != NULL'
+          ? `SELECT * FROM pages WHERE language != 'not_localized'`
           : 'SELECT * FROM pages WHERE language = $1'
       const params = language === undefined ? [] : [language]
-      const s = new PassThrough()
+      const s = new PassThrough({ objectMode: true })
       pool.connect((err, client, done) => {
         if (err) s.emit('error', err)
         const q = new QueryStream(statement, params)
         client.query(q)
+          .on('end', () => done())
           .pipe(new Transform({
             objectMode: true,
             transform (chunk, enc, callback) {
               callback(null, {
+                language: chunk.language,
+                page: { name: chunk.name },
                 key: `/${chunk.language}/${chunk.name}`,
                 value: chunk.fields
               })
@@ -106,18 +109,21 @@ module.exports = ({ url, ssl = false }) => {
     getObjects ({ language = '*', type = '*' }) {
       const statement =
         language === undefined
-          ? 'SELECT fields FROM objects != NULL'
+          ? `SELECT fields FROM objects != 'not_localized'`
           : 'SELECT fields FROM pages WHERE language = $1'
       const params = language === undefined ? [] : [language]
-      const s = new PassThrough()
+      const s = new PassThrough({ objectMode: true })
       pool.connect((err, client, done) => {
         if (err) s.emit('error', err)
         const q = new QueryStream(statement, params)
         client.query(q)
+          .on('end', () => done())
           .pipe(new Transform({
             objectMode: true,
             transform (chunk, enc, callback) {
               callback(null, {
+                language: chunk.language,
+                object: { type: chunk.type, id: chunk.id },
                 key: `/${chunk.language}/${chunk.type}/${chunk.id}`,
                 value: chunk.fields
               })
@@ -126,6 +132,10 @@ module.exports = ({ url, ssl = false }) => {
           .pipe(s)
       })
       return s
+    },
+
+    close () {
+      return pool.end()
     }
   }
 }

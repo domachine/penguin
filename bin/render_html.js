@@ -7,7 +7,6 @@ const { Writable } = require('stream')
 const { join, dirname } = require('path')
 const vm = require('vm')
 const mkdirp = require('mkdirp')
-const subarg = require('subarg')
 const loadJSON = require('load-json-file')
 const writeJSON = require('write-json-file')
 const cheerio = require('cheerio')
@@ -15,11 +14,14 @@ const Bluebird = require('bluebird')
 const resolve = require('resolve')
 const split = require('split')
 
-process.on('unhandledRejection', err => { throw err })
+module.exports = createOutputStream
 
 const readFileAsync = Bluebird.promisify(fs.readFile)
 
-main(subarg(process.argv.slice(2)))
+if (require.main === module) {
+  process.on('unhandledRejection', err => { throw err })
+  main(require('subarg')(process.argv.slice(2)))
+}
 
 function main (args) {
   const languageArgs = (args.languages || args.l)
@@ -31,7 +33,8 @@ function main (args) {
   const runtime = new vm.Script(fs.readFileSync(runtimePath, 'utf-8'))
   const databaseDriverArgs = args['database-driver'] || args.d
   const basedir = args.basedir || args.b || process.cwd()
-  const prefix = args.prefix || args.p || 'docs'
+  const prefix = args.prefix || args.p || 'dist'
+  const output = args.output || args.o
   if (typeof databaseDriverArgs !== 'object') {
     return error('no database driver given (e.g. -d [ mydriver ])')
   }
@@ -48,7 +51,8 @@ function main (args) {
       .pipe(createOutputStream({
         prefix,
         databaseDriver,
-        writer: createHTMLWriter({ runtime, databaseDriver })
+        runtime,
+        output
       }))
   })
 }
@@ -58,13 +62,14 @@ function error (msg) {
   process.exit(1)
 }
 
-function createOutputStream ({ prefix, databaseDriver, writer }) {
+function createOutputStream ({ prefix, databaseDriver, runtime, output = 'build' }) {
+  const writer = createHTMLWriter({ runtime })
   const globalsCache = {}
   return new Writable({
     objectMode: true,
     write (chunk, enc, callback) {
       const { key, value, template, language } = chunk
-      const path = join(prefix, key)
+      const path = join(output, key)
       const tplDataPath = join(prefix, template) + '.json'
       const tplHTMLPath = join(prefix, template) + '.html'
       Promise.all([

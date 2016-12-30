@@ -4,11 +4,14 @@
 
 const { basename, join } = require('path')
 const { Transform } = require('stream')
-const subarg = require('subarg')
 const resolve = require('resolve')
 const glob = require('glob')
 
-main(subarg(process.argv.slice(2)))
+module.exports = createPageStream
+
+if (require.main === module) {
+  main(require('subarg')(process.argv.slice(2)))
+}
 
 function main (args) {
   const languageArgs = (args.languages || args.l)
@@ -21,7 +24,7 @@ function main (args) {
       : (Array.isArray(languageArgs._) ? languageArgs._ : [])
   const databaseDriverArgs = args['database-driver'] || args.d
   const basedir = args.basedir || args.b || process.cwd()
-  const prefix = args.prefix || args.p || 'docs'
+  const prefix = args.prefix || args.p || 'dist'
   if (typeof databaseDriverArgs !== 'object') {
     return error('no database driver given (e.g. -d [ mydriver ])')
   }
@@ -31,6 +34,9 @@ function main (args) {
     const createDriver = require(p)
     const databaseDriver = createDriver(databaseDriverArgs)
     createPageStream({ prefix, databaseDriver, languages })
+      .on('end', () => {
+        if (databaseDriver.close) databaseDriver.close()
+      })
       .pipe(new Transform({
         objectMode: true,
         transform (chunk, enc, callback) {

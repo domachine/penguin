@@ -3,10 +3,13 @@
 'use strict'
 
 const { Transform } = require('stream')
-const subarg = require('subarg')
 const resolve = require('resolve')
 
-main(subarg(process.argv.slice(2)))
+module.exports = createObjectStream
+
+if (require.main === module) {
+  main(require('subarg')(process.argv.slice(2)))
+}
 
 function main (args) {
   const languageArgs = (args.languages || args.l)
@@ -28,6 +31,9 @@ function main (args) {
     const createDriver = require(p)
     const databaseDriver = createDriver(databaseDriverArgs)
     createObjectStream({ databaseDriver, languages })
+      .on('end', () => {
+        if (databaseDriver.close) databaseDriver.close()
+      })
       .pipe(new Transform({
         objectMode: true,
         transform (chunk, enc, callback) {
@@ -71,6 +77,7 @@ function createObjectStream ({ databaseDriver, languages }) {
             }
           }
         }
+        callback()
       }
     }))
 }

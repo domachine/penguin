@@ -2,63 +2,73 @@
 
 'use strict'
 
-const { Transform } = require('stream')
+const { parse } = require('path')
+const vm = require('vm')
+const fs = require('fs')
 const { join } = require('path')
-const { spawn } = require('child_process')
 const { rm } = require('shelljs')
-const subarg = require('subarg')
 const mergeStream = require('merge-stream')
-const split = require('split')
+const ncp = require('ncp')
+const resolveMod = require('resolve')
+const Bluebird = require('bluebird')
+
+const scanObjects = require('./scan_objects')
+const scanPages = require('./scan_pages')
+const renderHTML = require('./render_html')
 
 const { penguin: config } = require(join(process.cwd(), 'package.json'))
 
-process.on('unhandledRejection', err => { throw err })
+module.exports = build
 
-main(subarg(process.argv.slice(2)))
+const ncpAsync = Bluebird.promisify(ncp)
+
+if (require.main === module) {
+  process.on('unhandledRejection', err => { throw err })
+  main(require('subarg')(process.argv.slice(2)))
+}
 
 function main (args) {
   const runtimePath = args['server-runtime'] || args.s || 'server_runtime.js'
   const defaultDriver = { _: ['penguin.js/fs'], prefix: 'data' }
   const databaseDriverArgs = args['database-driver'] || args.d || defaultDriver
   const basedir = args.basedir || args.b || process.cwd()
-  const prefix = args.prefix || args.p || 'docs'
+  const prefix = args.prefix || args.p || 'dist'
+  const output = args.output || args.o
+  const runtime = new vm.Script(fs.readFileSync(runtimePath, 'utf-8'))
   if (typeof databaseDriverArgs !== 'object') {
     return error('no database driver given (e.g. -d [ mydriver ])')
   }
+  const { languages } = config
   config.languages.forEach(language => {
     const langOutput = join(prefix, language)
     rm('-rf', langOutput)
   })
-  const objects = createJSONStream(`${__dirname}/scan_objects.js`,
-    ['--basedir', basedir, '--database-driver', '[']
-      .concat(toArguments(databaseDriverArgs))
-      .concat([']', '--languages', '['])
-      .concat(config.languages).concat([']']))
-  const pages = createJSONStream(`${__dirname}/scan_pages.js`,
-    ['--prefix', prefix, '--basedir', basedir, '--languages', '[']
-      .concat(config.languages).concat([']'])
-      .concat(['--database-driver', '['])
-      .concat(toArguments(databaseDriverArgs))
-      .concat([']']))
-  const render = spawn(`${__dirname}/render_html.js`,
-    [
-      '--prefix', prefix,
-      '--basedir', basedir,
-      '--server-runtime', runtimePath,
-      '--languages', '['
-    ]
-    .concat(config.languages).concat([']'])
-    .concat(['--database-driver', '['])
-    .concat(toArguments(databaseDriverArgs))
-    .concat([']']),
-    { stdio: ['pipe', 'inherit', 'inherit'] })
-  mergeStream(objects, pages)
-    .pipe(new Transform({
-      transform (chunk, enc, callback) {
-        callback(null, chunk.toString() + '\n')
-      }
-    }))
-    .pipe(render.stdin)
+  createModuleFromArgs(databaseDriverArgs, { basedir })
+    .then(databaseDriver => {
+      build({ runtime, databaseDriver, languages, prefix, output })
+    })
+}
+
+function build ({ runtime, databaseDriver, languages, prefix, output = 'build' }) {
+  const objects = scanObjects({ databaseDriver, languages })
+  const pages = scanPages({ databaseDriver, languages, prefix })
+  const render = renderHTML({ databaseDriver, prefix, runtime, output })
+  return ncpAsync('files', output)
+    .then(() =>
+      Promise.all([
+        ncpAsync('static', join(output, 'static')),
+        ncpAsync(prefix, output, { filter (name) {
+          const n = parse(name)
+          return n.ext === '.json' || !n.ext
+        } }),
+        new Promise((resolve, reject) => {
+          mergeStream(objects, pages)
+            .pipe(render)
+            .on('error', reject)
+            .on('finish', () => resolve())
+        })
+      ])
+    )
 }
 
 function error (msg) {
@@ -66,24 +76,18 @@ function error (msg) {
   process.exit(1)
 }
 
-function toArguments (o) {
-  return Object.keys(o).reduce((args, key) =>
-    args
-      .concat(
-        key === '_'
-          ? []
-          : [key.length === 1 ? `-${key}` : `--${key}`]
-      )
-      .concat(
-        Array.isArray(o[key])
-          ? o[key]
-          : [o[key]]
-      )
-  , [])
+function createModuleFromArgs (a, opts) {
+  const name = a._[0]
+  const args = Object.assign({}, a, { _: a._.slice(1) })
+  return createModule(name, opts, args)
 }
 
-function createJSONStream (path, args) {
-  const stdio = ['ignore', 'pipe', 'inherit']
-  const proc = spawn(path, args, { stdio })
-  return proc.stdout.pipe(split(null, null, { trailing: false }))
+function createModule (mod, opts, ...args) {
+  return new Promise((resolve, reject) => {
+    resolveMod(mod, opts, (err, p) => {
+      if (err) return reject(err)
+      const constructor = require(p)
+      resolve(constructor(...args))
+    })
+  })
 }

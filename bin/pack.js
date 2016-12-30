@@ -5,7 +5,7 @@
 const { dirname, join, basename, extname } = require('path')
 const fs = require('fs')
 const { spawn, spawnSync } = require('child_process')
-const { cp, mkdir, rm } = require('shelljs')
+const { mkdir, rm, test } = require('shelljs')
 const glob = require('glob')
 const subarg = require('subarg')
 const mkdirp = require('mkdirp')
@@ -17,6 +17,8 @@ const createEngine = require('../lib/engine')
 const createDustDriver = require('../lib/dust_driver')
 const createPugDriver = require('../lib/pug_driver')
 const { default: createServerRuntime } = require('../lib/server_runtime')
+const renderIndexHTML = require('../pages/index')
+const render404HTML = require('../pages/404')
 
 require('babel-register')({
   presets: [require('babel-preset-react')],
@@ -35,7 +37,7 @@ const drivers = {
 
 const { penguin: { languages } } = require(`${process.cwd()}/package.json`)
 const args = subarg(process.argv.slice(2))
-const prefix = args.prefix || args.p || 'docs'
+const prefix = args.prefix || args.p || 'dist'
 const viewEngine = args['view-engine'] || args.v || 'html'
 const serverRuntimePath =
   args['server-runtime'] || args.s || 'server_runtime.js'
@@ -57,18 +59,20 @@ const engine = createEngine({
   })
 })
 rm('-rf', prefix)
-if (fs.existsSync('files')) cp('-R', 'files', prefix)
-else mkdir('-p', prefix)
-if (!fs.existsSync(join(prefix, 'index.html'))) {
-  fs.writeFileSync(join(prefix, 'index.html'), renderIndexHTML({ languages }))
+mkdir('-p', prefix)
+mkdir('-p', 'files')
+mkdir('-p', 'static')
+if (!test('-f', 'files/index.html')) {
+  fs.writeFileSync('files/index.html', renderIndexHTML({ languages }))
 }
-mkdir('-p', join(prefix, 'static'))
-if (fs.existsSync('static')) rm('-f', 'static/client.js')
+if (!test('-f', 'files/404.html')) {
+  fs.writeFileSync('files/404.html', render404HTML({ languages }))
+}
 const opts = { stdio: ['ignore', 'pipe', 'inherit'], env }
 spawn(`${__dirname}/build_server_runtime.js`, [], opts)
   .stdout.pipe(fs.createWriteStream(serverRuntimePath))
 spawn(`${__dirname}/build_client_runtime.js`, [], opts)
-  .stdout.pipe(fs.createWriteStream(join(prefix, 'static', 'client.js')))
+  .stdout.pipe(fs.createWriteStream(join('static', 'client.js')))
 const files = glob.sync('@(objects|pages)/*.' + viewEngine)
 Promise.all(
   files.map(file => {
@@ -93,19 +97,3 @@ Promise.all(
     )
   })
 )
-if (fs.existsSync('static')) cp('-R', 'static', prefix)
-
-function renderIndexHTML ({ languages }) {
-  return `
-<!DOCTYPE html>
-<html>
-  <head>
-    <title>Redirecting ...</title>
-    <meta http-equiv='refresh' content='0; URL=/${languages[0]}/'>
-  </head>
-  <body>
-    Redirecting <a href='/${languages[0]}/'>here</a> ...
-  </body>
-</html>
-`
-}
