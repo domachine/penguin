@@ -9,7 +9,8 @@ const commands = {
   pack: 'pack.js',
   serve: 'serve.js',
   run: 'run.js',
-  generate: 'generate.js'
+  generate: 'generate.js',
+  publish: 'publish.js'
 }
 
 const command = commands[process.argv[2]]
