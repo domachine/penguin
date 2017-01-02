@@ -3,6 +3,7 @@
 const fs = require('fs')
 const { join } = require('path')
 const { spawn, execFile } = require('child_process')
+const rimraf = require('rimraf')
 
 module.exports = args => {
   const url = args.url || args.u
@@ -16,14 +17,22 @@ module.exports = args => {
       // Checkout repository
       fs.mkdtemp('penguin-git-clone-', (err, path) => {
         if (err) return reject(err)
-        execFile(git, ['clone', '--no-checkout', '--depth', '1', url, path],
+        execFile(git, [
+          'clone', '--no-checkout',
+          '--depth', '1',
+          '--branch', branch,
+          url, path
+        ],
           err => {
             if (err) return reject(err)
-            fs.rename(join(path, '.git'), join(output, '.git'), err => {
+            rimraf(join(output, '.git'), err => {
               if (err) return reject(err)
-              fs.rmdir(path, err => {
+              fs.rename(join(path, '.git'), join(output, '.git'), err => {
                 if (err) return reject(err)
-                resolve()
+                fs.rmdir(path, err => {
+                  if (err) return reject(err)
+                  resolve()
+                })
               })
             })
           })
