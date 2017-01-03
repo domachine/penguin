@@ -29,7 +29,7 @@ import ReactDOMServer from 'react-dom/server'
 
 import ${name} from './${basename}.jsx'
 
-export default function render (props, el) {
+export function render (props, el) {
   return ReactDOMServer.renderToString(React.createElement(${name}, props))
 }`
   const browserJS =
@@ -38,7 +38,7 @@ import ReactDOM from 'react-dom'
 
 import ${name} from './${basename}.jsx'
 
-export default function render (props, el) {
+export function mount (props, el) {
   return ReactDOM.render(React.createElement(${name}, props), el)
 }`
   const componentJSX =
