@@ -3,12 +3,10 @@
 'use strict'
 
 const fs = require('fs')
-const { join } = require('path')
 const { spawn, spawnSync } = require('child_process')
 const subarg = require('subarg')
-const browserify = require('browserify')
-const watchify = require('watchify')
-const mkdirp = require('mkdirp')
+const browserify = require('browserify-middleware')
+const { Router } = require('express')
 const babelify = require('babelify')
 const envify = require('envify')
 
@@ -43,10 +41,23 @@ const viewDriver = createDevelopmentDriver({
   languages,
   dataPrefix: 'data'
 })
+const router = Router()
+router.use('/static', browserify('.', {
+  transform: [
+    babelify.configure({
+      presets: [
+        require('babel-preset-react'),
+        require('babel-preset-es2015')
+      ]
+    }),
+    envify
+  ]
+}))
 const app = createApp({
   languages,
   viewDriver,
-  databaseDriver: createFsDriver({ prefix: 'data' })
+  databaseDriver: createFsDriver({ prefix: 'data' }),
+  middleware: [router]
 })
 spawnSync(`${__dirname}/create_component_map.js`, [
   'components', '-b', '-o', 'components.js'
@@ -54,29 +65,7 @@ spawnSync(`${__dirname}/create_component_map.js`, [
 spawn(`${__dirname}/create_component_map.js`, [
   'components', '-w', '-b', '-o', 'components.js'
 ], { stdio: 'inherit' })
-const b = browserify({
-  entries: [createClientRuntimeScript(pkg)],
-  basedir: process.cwd(),
-  cache: {},
-  packageCache: {},
-  plugin: [watchify]
-})
-.transform(babelify.configure({
-  presets: [
-    require('babel-preset-react'),
-    require('babel-preset-es2015')
-  ]
-}))
-.transform(envify)
-b.on('log', msg => console.log(msg))
-b.on('update', bundle)
-mkdirp('static', bundle)
+fs.writeFileSync('client.js', createClientRuntimeScript(pkg))
 app.listen(process.env.PORT || 3000, () => {
   console.log('> Ready on port ' + (process.env.PORT || 3000))
 })
-
-function bundle () {
-  b.bundle()
-    .on('error', err => { console.error(err.message) })
-    .pipe(fs.createWriteStream(join(staticPrefix, 'client.js')))
-}

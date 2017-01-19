@@ -7,12 +7,13 @@ const babelify = require('babelify')
 const envify = require('envify')
 const UglifyJS = require('uglify-js')
 const uglifyify = require('uglifyify')
+const str = require('string-to-stream')
 
 const createClientRuntimeScript = require('../lib/client_runtime_script')
 const pkg = require('../package.json')
 
 browserify({
-  entries: [createClientRuntimeScript(pkg)],
+  entries: [str(createClientRuntimeScript(pkg))],
   basedir: process.cwd()
 })
 .transform(babelify.configure({
