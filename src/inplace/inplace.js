@@ -1,4 +1,3 @@
-// import sanitize from 'sanitize-html'
 import { createValueSelector, isEditable, isLoading } from '../selectors'
 import { update } from '../actions'
 
@@ -23,7 +22,7 @@ export default function createInplace (ownProps, el) {
   }
 
   function onInput (e) {
-    const value = e.target.textContent
+    const value = e.target.innerText
     store.dispatch(update({ [field]: value }))
   }
 }
@@ -48,5 +47,5 @@ function render (props, el) {
   if (el.getAttribute('contenteditable') !== contenteditable) {
     el.setAttribute('contenteditable', contenteditable)
   }
-  if (el.textContent !== value) el.textContent = value
+  if (el.innerText !== value) el.innerText = value
 }
