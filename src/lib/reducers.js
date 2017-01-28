@@ -16,7 +16,6 @@ export default combineReducers({
   languages,
   context,
   isEditable,
-  isLoading,
   isSaving,
   error,
   isBuilt
@@ -68,13 +67,6 @@ function isEditable (state = false, action) {
   switch (action.type) {
     case SET_EDITABLE:
       return action.value
-    default:
-      return state
-  }
-}
-
-function isLoading (state = false, action) {
-  switch (action.type) {
     default:
       return state
   }

@@ -38,10 +38,6 @@ export function isEditable ({ isEditable }) {
   return isEditable
 }
 
-export function isLoading ({ isLoading }) {
-  return isLoading
-}
-
 export function isSaving ({ isSaving }) {
   return isSaving
 }

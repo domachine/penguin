@@ -1,4 +1,4 @@
-import { createValueSelector, isEditable, isLoading } from '../selectors'
+import { createValueSelector, isEditable } from '../selectors'
 import { update } from '../actions'
 
 export default function createInplace (ownProps, el) {
@@ -34,16 +34,15 @@ function createPropCalculator (props) {
     return Object.assign({
       value: v == null ? (props.innerHTML || '') : v
     }, {
-      isEditable: isEditable(state),
-      isLoading: isLoading(state)
+      isEditable: isEditable(state)
     })
   }
 }
 
 function render (props, el) {
-  const { value, isEditable, isLoading } = props
+  const { value, isEditable } = props
   if (!el) return props.value
-  const contenteditable = (isEditable && !isLoading) ? 'true' : 'false'
+  const contenteditable = isEditable ? 'true' : 'false'
   if (el.getAttribute('contenteditable') !== contenteditable) {
     el.setAttribute('contenteditable', contenteditable)
   }
