@@ -98,7 +98,7 @@ function startServer ({
           ? databaseDriver.getObject({ language: languages[0], type, id })
           : Promise.resolve({}),
         databaseDriver.getObject({ language, type, id }),
-        databaseDriver.getPage({ language: null, type, id }),
+        databaseDriver.getObject({ language: null, type, id }),
         databaseDriver.getGlobals({ language }),
         databaseDriver.getGlobals({ language: null })
       ]),
