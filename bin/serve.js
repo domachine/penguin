@@ -2,70 +2,91 @@
 
 'use strict'
 
-const fs = require('fs')
-const { spawn, spawnSync } = require('child_process')
-const subarg = require('subarg')
+const { PassThrough, Transform } = require('stream')
+const { spawn } = require('child_process')
 const browserify = require('browserify-middleware')
 const { Router } = require('express')
-const babelify = require('babelify')
 const envify = require('envify')
+const { mkdir } = require('shelljs')
+const rollupify = require('../lib/rollupify')
 
-const createApp = require('../lib/app')
-const createClientRuntimeScript = require('../lib/client_runtime_script')
-const createEngine = require('../lib/engine')
-const createDustDriver = require('../lib/dust_driver')
-const createPugDriver = require('../lib/pug_driver')
 const createFsDriver = require('../fs')
 const createDevelopmentDriver = require('../lib/development_driver')
-const pkg = require('../package.json')
+const createStateSerializer = require('../lib/state')
+const renderClientRuntime = require('./render_client_runtime')
+const compileTemplate = require('./compile_template')
+const startServer = require('./start_server')
 
-const drivers = {
-  html: createDustDriver,
-  pug: createPugDriver
+if (require.main === module) {
+  main(require('subarg')(process.argv.slice(2)))
 }
 
-const args = subarg(process.argv.slice(2))
-const staticPrefix = args['static'] || args.s || 'static'
-const ext = args['view-engine'] || args.v || 'html'
-const { languages } = require(`${process.cwd()}/package.json`).penguin
-const engine = createEngine({ drivers })
-if (process.env.NODE_ENV === 'production') {
-  console.error('WARNING! You\'re running penguin.js in production but it\'s not ready, yet!')
+function main (args) {
+  const staticPrefix = args['static'] || args.s
+  const ext = args['view-engine'] || args.v
+  const config = require(`${process.cwd()}/package.json`).penguin
+  if (process.env.NODE_ENV === 'production') {
+    console.error('WARNING! You\'re running penguin.js in production but it\'s not ready, yet!')
+  }
+  serve({ staticPrefix, ext, config })
 }
-const viewDriver = createDevelopmentDriver({
-  engine,
-  ext,
-  prefix: '.',
-  staticPrefix,
-  filesPrefix: 'files',
-  languages,
-  dataPrefix: 'data'
-})
-const router = Router()
-router.use('/static', browserify('.', {
-  transform: [
-    babelify.configure({
-      presets: [
-        require('babel-preset-react'),
-        require('babel-preset-es2015')
-      ]
+
+function serve ({ staticPrefix = 'static', ext = 'dust', config }) {
+  const { languages } = config
+  const rollupOpts = {
+    config: {
+      onwarn ({ message, code }) {
+        if (code === 'UNRESOLVED_IMPORT') return
+        console.warn(message)
+      },
+      plugins: [require('rollup-plugin-buble')()]
+    }
+  }
+  const toTransform = fn =>
+    file => file.endsWith(`.${ext}`) ? fn(file) : new PassThrough()
+  mkdir('-p', '.penguin')
+  spawn(`${__dirname}/create_component_map.js`, [
+    'components', '-w', '-b', '-o', '.penguin/components.js'
+  ], { stdio: 'inherit' })
+  startServer({
+    languages,
+    viewDriver: createDevelopmentDriver({
+      ext,
+      prefix: '.',
+      staticPrefix,
+      filesPrefix: 'files',
+      languages,
+      dataPrefix: 'data'
     }),
-    envify
-  ]
-}))
-const app = createApp({
-  languages,
-  viewDriver,
-  databaseDriver: createFsDriver({ prefix: 'data' }),
-  middleware: [router]
-})
-spawnSync(`${__dirname}/create_component_map.js`, [
-  'components', '-b', '-o', 'components.js'
-], { stdio: 'inherit' })
-spawn(`${__dirname}/create_component_map.js`, [
-  'components', '-w', '-b', '-o', 'components.js'
-], { stdio: 'inherit' })
-fs.writeFileSync('client.js', createClientRuntimeScript(pkg))
-app.listen(process.env.PORT || 3000, () => {
-  console.log('> Ready on port ' + (process.env.PORT || 3000))
-})
+    databaseDriver: createFsDriver({ prefix: 'data' }),
+    middleware: [
+      Router()
+        .use('/static', browserify(process.cwd(), {
+          grep: new RegExp(`\\.${ext}$`),
+          standalone: 'Penguin',
+          transform: [
+            toTransform(file =>
+              new Transform({
+                transform (chunk, enc, callback) { callback() },
+                flush (callback) {
+                  compileTemplate({ file })
+                    .on('error', callback)
+                    .on('data', d => this.push(d))
+                    .on('end', () => callback())
+                }
+              })
+            ),
+            toTransform(() => renderClientRuntime()),
+            file => rollupify(file + '.js', rollupOpts),
+            envify
+          ]
+        }))
+        .use((err, req, res, next) => {
+          if (err.snippet) console.error(err.snippet)
+          next(err)
+        })
+    ],
+    stateSerializer: createStateSerializer({ config }),
+    port: process.env.PORT || 3000
+  })
+}

@@ -28,39 +28,31 @@ if (require.main === module) {
 }
 
 function main (args) {
-  const runtimePath = args['server-runtime'] || args.s || 'server_runtime.js'
+  // const runtimePath = args['server-runtime'] || args.s || 'server_runtime.js'
   const defaultDriver = { _: ['penguin.js/fs'], prefix: 'data' }
   const databaseDriverArgs = args['database-driver'] || args.d || defaultDriver
   const basedir = args.basedir || args.b || process.cwd()
-  const prefix = args.prefix || args.p || 'dist'
+  // const prefix = args.prefix || args.p || 'dist'
   const output = args.output || args.o
-  const runtime = new vm.Script(fs.readFileSync(runtimePath, 'utf-8'))
+  // const runtime = new vm.Script(fs.readFileSync(runtimePath, 'utf-8'))
   if (typeof databaseDriverArgs !== 'object') {
     return error('no database driver given (e.g. -d [ mydriver ])')
   }
-  const { languages } = config
-  config.languages.forEach(language => {
-    const langOutput = join(prefix, language)
-    rm('-rf', langOutput)
-  })
   createModuleFromArgs(databaseDriverArgs, { basedir })
     .then(databaseDriver => {
-      build({ runtime, databaseDriver, languages, prefix, output })
+      build({ databaseDriver, config, output })
     })
 }
 
-function build ({ runtime, databaseDriver, languages, prefix, output = 'build' }) {
+function build ({ databaseDriver, config, output = 'build' }) {
+  const { languages } = config
   const objects = scanObjects({ databaseDriver, languages })
-  const pages = scanPages({ databaseDriver, languages, prefix })
-  const render = renderHTML({ databaseDriver, prefix, runtime, output })
+  const pages = scanPages({ databaseDriver, languages })
+  const render = renderHTML({ databaseDriver, config, output })
   return ncpAsync('files', output)
     .then(() =>
       Promise.all([
         ncpAsync('static', join(output, 'static')),
-        ncpAsync(prefix, output, { filter (name) {
-          const n = parse(name)
-          return n.ext === '.json' || !n.ext
-        } }),
         new Promise((resolve, reject) => {
           mergeStream(objects, pages)
             .pipe(render)

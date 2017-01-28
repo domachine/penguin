@@ -2,30 +2,83 @@
 
 'use strict'
 
+const { Transform, PassThrough } = require('stream')
+const { extname } = require('path')
 const browserify = require('browserify')
-const babelify = require('babelify')
 const envify = require('envify')
 const UglifyJS = require('uglify-js')
-const uglifyify = require('uglifyify')
-const str = require('string-to-stream')
+const rollupify = require('../lib/rollupify')
 
-const createClientRuntimeScript = require('../lib/client_runtime_script')
-const pkg = require('../package.json')
+const renderClientRuntime = require('./render_client_runtime')
+const compileTemplate = require('./compile_template')
 
-browserify({
-  entries: [str(createClientRuntimeScript(pkg))],
-  basedir: process.cwd()
-})
-.transform(babelify.configure({
-  presets: [
-    require('babel-preset-react'),
-    require('babel-preset-es2015')
-  ]
-}))
-.transform(envify)
-.transform(uglifyify)
-.bundle((err, content) => {
-  if (err) throw err
-  const res = UglifyJS.minify(content.toString(), { fromString: true })
-  console.log(res.code)
-})
+module.exports = buildClientRuntime
+process.env.NODE_ENV = 'production'
+
+if (require.main === module) {
+  main(require('subarg')(process.argv.slice(2)))
+}
+
+function main (args) {
+  const file = args._[0]
+  if (!file) return error('No file given (e.g. myfile.html)')
+  return buildClientRuntime({ file })
+    .pipe(process.stdout)
+}
+
+function buildClientRuntime ({ file }) {
+  const ext = extname(file)
+  const rollupOpts = {
+    config: {
+      onwarn ({ message, code }) {
+        if (code === 'UNRESOLVED_IMPORT') return
+        console.warn(message)
+      },
+      plugins: [require('rollup-plugin-buble')()]
+    }
+  }
+  const toTransform = fn =>
+    file => file.endsWith(ext) ? fn(file) : new PassThrough()
+  return browserify({
+    entries: [file],
+    standalone: 'Penguin',
+    basedir: process.cwd()
+  })
+  .transform(toTransform(file =>
+    new Transform({
+      transform (chunk, enc, callback) { callback() },
+      flush (callback) {
+        compileTemplate({ file })
+          .on('error', callback)
+          .on('data', d => this.push(d))
+          .on('end', () => callback())
+      }
+    })
+  ))
+  .transform(toTransform(() => renderClientRuntime()))
+  .transform(file => rollupify(file + '.js', rollupOpts))
+  .transform(envify)
+  .bundle()
+  .pipe(createUglify())
+}
+
+function createUglify () {
+  let buffer = ''
+  return new Transform({
+    transform (chunk, enc, callback) {
+      buffer += chunk
+      callback()
+    },
+
+    flush (callback) {
+      const res = UglifyJS.minify(buffer.toString(), { fromString: true })
+      this.push(res.code)
+      callback()
+    }
+  })
+}
+
+function error (msg) {
+  console.error(msg)
+  process.exit(1)
+}

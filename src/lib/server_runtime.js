@@ -2,8 +2,8 @@ import { createStore } from 'redux'
 
 import reduce from './reducers'
 
-export default function createServerRenderer ({ components, state }) {
-  return function render ($) {
+export default function createServerRenderer ({ components }) {
+  return function render (state, $) {
     const store = createStore(reduce, state)
     $('[data-component]').each(function () {
       const el = $(this)

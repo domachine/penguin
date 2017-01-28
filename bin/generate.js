@@ -53,5 +53,5 @@ export default function ${name} () {
   fs.writeFileSync(`components/${basename}/index.js`, indexJS)
   fs.writeFileSync(`components/${basename}/browser.js`, browserJS)
   fs.writeFileSync(`components/${basename}/${basename}.jsx`, componentJSX)
-  console.log(`Generated ${name} in components/${basename}`)
+  console.error(`Generated ${name} in components/${basename}`)
 }

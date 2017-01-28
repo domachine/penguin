@@ -24,7 +24,6 @@ function main (args) {
       : (Array.isArray(languageArgs._) ? languageArgs._ : [])
   const databaseDriverArgs = args['database-driver'] || args.d
   const basedir = args.basedir || args.b || process.cwd()
-  const prefix = args.prefix || args.p || 'dist'
   if (typeof databaseDriverArgs !== 'object') {
     return error('no database driver given (e.g. -d [ mydriver ])')
   }
@@ -33,7 +32,7 @@ function main (args) {
     if (err) throw err
     const createDriver = require(p)
     const databaseDriver = createDriver(databaseDriverArgs)
-    createPageStream({ prefix, databaseDriver, languages })
+    createPageStream({ databaseDriver, languages })
       .on('end', () => {
         if (databaseDriver.close) databaseDriver.close()
       })
@@ -52,8 +51,8 @@ function error (msg) {
   process.exit(1)
 }
 
-function createPageStream ({ prefix, databaseDriver, languages }) {
-  let templates = glob.sync(join(prefix, 'pages', '*.html'))
+function createPageStream ({ databaseDriver, languages }) {
+  let templates = glob.sync(join('pages', '*.html'))
   let sent = {}
   return databaseDriver.getPages({})
     .pipe(new Transform({
@@ -61,7 +60,7 @@ function createPageStream ({ prefix, databaseDriver, languages }) {
       transform (chunk, enc, callback) {
         const { language, page: { name } } = chunk
         const hasTemplate =
-          templates.indexOf(join(prefix, 'pages', name + '.html')) > -1
+          templates.indexOf(join('pages', name + '.html')) > -1
         if (!hasTemplate) return callback()
         if (!sent[chunk.page.name]) sent[chunk.page.name] = new Set([chunk.language])
         else sent[name].add(language)

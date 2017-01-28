@@ -8,11 +8,13 @@ const { join, dirname } = require('path')
 const vm = require('vm')
 const mkdirp = require('mkdirp')
 const loadJSON = require('load-json-file')
-const writeJSON = require('write-json-file')
 const cheerio = require('cheerio')
 const Bluebird = require('bluebird')
 const resolve = require('resolve')
 const split = require('split')
+const serialize = require('serialize-javascript')
+
+const createStateSerializer = require('../lib/state')
 
 module.exports = createOutputStream
 
@@ -24,22 +26,12 @@ if (require.main === module) {
 }
 
 function main (args) {
-  const languageArgs = (args.languages || args.l)
-  const languages =
-    typeof languageArgs === 'string'
-      ? [languageArgs]
-      : (Array.isArray(languageArgs._) ? languageArgs._ : [])
-  const runtimePath = args['server-runtime'] || args.s || 'server_runtime.js'
-  const runtime = new vm.Script(fs.readFileSync(runtimePath, 'utf-8'))
   const databaseDriverArgs = args['database-driver'] || args.d
   const basedir = args.basedir || args.b || process.cwd()
-  const prefix = args.prefix || args.p || 'dist'
   const output = args.output || args.o
+  const { penguin: config } = require(`${process.cwd()}/package.json`)
   if (typeof databaseDriverArgs !== 'object') {
     return error('no database driver given (e.g. -d [ mydriver ])')
-  }
-  if (languages.length === 0) {
-    return error('no languages given (e.g. --languages [ de en ])')
   }
   const databaseDriverModule = databaseDriverArgs._.shift()
   resolve(databaseDriverModule, { basedir }, (err, p) => {
@@ -48,12 +40,7 @@ function main (args) {
     const databaseDriver = createDriver(databaseDriverArgs)
     process.stdin
       .pipe(split(JSON.parse, null, { trailing: false }))
-      .pipe(createOutputStream({
-        prefix,
-        databaseDriver,
-        runtime,
-        output
-      }))
+      .pipe(createOutputStream({ databaseDriver, config, output }))
       .on('finish', () => {
         if (databaseDriver.close) databaseDriver.close()
       })
@@ -65,16 +52,19 @@ function error (msg) {
   process.exit(1)
 }
 
-function createOutputStream ({ prefix, databaseDriver, runtime, output = 'build' }) {
-  const writer = createHTMLWriter({ runtime })
+function createOutputStream ({ databaseDriver, config, output = 'build' }) {
   const globalsCache = {}
+  const writer = createHTMLWriter({
+    stateSerializer: createStateSerializer({ config })
+  })
   return new Writable({
     objectMode: true,
     write (chunk, enc, callback) {
       const { key, value, template, language } = chunk
       const path = join(output, key)
-      const tplDataPath = join(prefix, template) + '.json'
-      const tplHTMLPath = join(prefix, template) + '.html'
+      const tplDataPath = template + '.json'
+      const tplHTMLPath = template + '.html'
+      const tplJSPath = template + '.js'
       Promise.all([
         globalsCache[language]
           ? Promise.resolve(globalsCache[language])
@@ -83,9 +73,10 @@ function createOutputStream ({ prefix, databaseDriver, runtime, output = 'build'
             databaseDriver.getGlobals({ language: null })
           ]).then(globals => Object.assign({}, ...globals)),
         readFileAsync(tplHTMLPath).catch(() => null),
-        loadJSONSafe(tplDataPath)
+        loadJSONSafe(tplDataPath),
+        readFileAsync(tplJSPath)
       ])
-      .then(([globals, tpl, meta]) => {
+      .then(([globals, tpl, meta, js]) => {
         if (tpl == null) return
         return (
           (chunk.object
@@ -98,10 +89,7 @@ function createOutputStream ({ prefix, databaseDriver, runtime, output = 'build'
           .then(notLocalized => {
             const fields = Object.assign({}, value, notLocalized, globals)
             if (meta == null) meta = {}
-            return Promise.all([
-              writeJSON(path + '.json', fields, { indent: null }),
-              writer(path + '.html', tpl, { fields, meta, language })
-            ])
+            return writer(path + '.html', tpl, js, { fields, meta, language })
           })
         )
       })
@@ -111,23 +99,34 @@ function createOutputStream ({ prefix, databaseDriver, runtime, output = 'build'
   })
 }
 
-function createHTMLWriter ({ runtime }) {
-  return function writeRecordHTML (path, template, { fields, meta, language }) {
-    return new Promise((resolve, reject) => {
+function createHTMLWriter ({ stateSerializer }) {
+  return (path, template, js, { fields, meta, language }) =>
+    new Promise((resolve, reject) => {
+      console.error('render %s', path)
       mkdirp(dirname(path), err => {
         if (err) return reject(err)
         const output = fs.createWriteStream(path)
-        const data = { fields, meta, language }
-        const ctx = vm.createContext({
-          __params: { data, html: cheerio.load(template) }
-        })
-        runtime.runInContext(ctx)
-        output.write(ctx.__params.output)
+        const $ = cheerio.load(template)
+        const m = { exports: {} }
+        const ctx = vm.createContext({ $, module: m, exports: m.exports })
+        const state = stateSerializer({ fields, meta, language })
+        state.isBuilt = true
+        state.isEditable = false
+        const renderer = new vm.Script(
+  `${js}
+  module.exports(${JSON.stringify(state)}, $)`
+        )
+        renderer.runInContext(ctx)
+        $('body').append(
+          `<script>window.Penguin(${
+            serialize(state, { isJSON: true })
+          })</script>`
+        )
+        output.write($.html())
         output.end()
         resolve()
       })
     })
-  }
 }
 
 function loadJSONSafe (p) {

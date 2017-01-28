@@ -44,6 +44,7 @@ function main () {
       if (err) throw err
       this.on('changed', generator)
     })
+    generator()
   }
 }
 
@@ -85,7 +86,7 @@ function createResolver ({ pattern, browser }) {
         resolveModule(entry.file, { basedir: process.cwd() }, (err, res, pkg) => {
           if (err) return reject(err)
           if (!pkg || typeof pkg.browser !== 'string') return resolve(entry)
-          const prefix = entry.file.startsWith('./') ? './' : ''
+          const prefix = entry.file.startsWith('./') ? '../' : ''
           const modulePath =
             browser
               ? ((!pkg || typeof pkg.browser !== 'string')
@@ -117,10 +118,11 @@ function createWriter ({ stream, output, pattern, browser }) {
     // const files = glob.sync(pattern)
     const s = typeof stream === 'function' ? stream() : stream
     s.end(
-`${entries.map(({ file }, i) => `import { ${symbol} as C${i} } from '${file}'`).join('\n')}
-export default {
-${entries.map(({ name }, i) => `  '${name}': ${`C${i}`}`).join(',\n')}
-}`
+      entries
+        .map(({ file, name }, i) =>
+          `export { ${symbol} as ${name} } from '${file}'`
+        )
+        .join('\n')
     )
     console.error(output + ' written')
   }

@@ -2,98 +2,120 @@
 
 'use strict'
 
+const crypto = require('crypto')
+const { Writable } = require('stream')
 const { dirname, join, basename, extname } = require('path')
 const fs = require('fs')
-const { spawn, spawnSync } = require('child_process')
-const { mkdir, rm, test } = require('shelljs')
+const { spawnSync } = require('child_process')
+const { mkdir, test } = require('shelljs')
 const glob = require('glob')
-const subarg = require('subarg')
 const mkdirp = require('mkdirp')
 const loadJSON = require('load-json-file')
-const writeJSON = require('write-json-file')
 const Bluebird = require('bluebird')
 
-const createEngine = require('../lib/engine')
-const createDustDriver = require('../lib/dust_driver')
-const createPugDriver = require('../lib/pug_driver')
-const { default: createServerRuntime } = require('../lib/server_runtime')
 const renderIndexHTML = require('../pages/index')
 const render404HTML = require('../pages/404')
+const buildClientRuntime = require('./build_client_runtime')
+const buildServerRuntime = require('./build_server_runtime')
+const compileTemplate = require('./compile_template')
 
-require('babel-register')({
-  presets: [require('babel-preset-react')],
-  plugins: [require('babel-plugin-transform-es2015-modules-commonjs')]
-})
-
-const writeFileAsync = Bluebird.promisify(fs.writeFile)
 const mkdirpAsync = Bluebird.promisify(mkdirp)
 
-process.on('unhandledRejection', err => { throw err })
+module.exports = pack
 
-const drivers = {
-  html: createDustDriver,
-  pug: createPugDriver
+if (require.main === module) {
+  process.on('unhandledRejection', err => { throw err })
+  main(require('subarg')(process.argv.slice(2)))
 }
 
-const { penguin: { languages } } = require(`${process.cwd()}/package.json`)
-const args = subarg(process.argv.slice(2))
-const prefix = args.prefix || args.p || 'dist'
-const viewEngine = args['view-engine'] || args.v || 'html'
-const serverRuntimePath =
-  args['server-runtime'] || args.s || 'server_runtime.js'
-const env = Object.assign({}, process.env, {
-  NODE_ENV: 'production',
-  BABEL_ENV: 'production'
-})
-spawnSync(`${__dirname}/create_component_map.js`, [
-  'components', '-b', '-o', 'components.js'
-], { stdio: 'inherit', env })
-spawnSync(`${__dirname}/create_component_map.js`, [
-  'components', '-o', 'server_components.js'
-], { stdio: 'inherit', env })
-const engine = createEngine({
-  drivers,
-  runtime: createServerRuntime({
-    state: { isEditable: true, isLoading: true },
-    components: require(join(process.cwd(), 'server_components')).default
-  })
-})
-rm('-rf', prefix)
-mkdir('-p', prefix)
-mkdir('-p', 'files')
-mkdir('-p', 'static')
-if (!test('-f', 'files/index.html')) {
-  fs.writeFileSync('files/index.html', renderIndexHTML({ languages }))
+function main (args) {
+  const { penguin: { languages } } = require(`${process.cwd()}/package.json`)
+  const viewEngine = args['view-engine'] || args.v
+  pack({ viewEngine, languages })
 }
-if (!test('-f', 'files/404.html')) {
-  fs.writeFileSync('files/404.html', render404HTML({ languages }))
-}
-const opts = { stdio: ['ignore', 'pipe', 'inherit'], env }
-spawn(`${__dirname}/build_server_runtime.js`, [], opts)
-  .stdout.pipe(fs.createWriteStream(serverRuntimePath))
-spawn(`${__dirname}/build_client_runtime.js`, [], opts)
-  .stdout.pipe(fs.createWriteStream(join('static', 'client.js')))
-const files = glob.sync('@(objects|pages)/*.' + viewEngine)
-Promise.all(
-  files.map(file => {
-    const d = dirname(file)
-    const e = extname(file)
-    const b = basename(file, e)
-    const htmlOutput = join(prefix, d, b + '.html')
-    const jsonOutput = join(prefix, d, b + '.json')
-    const metaJSON = join(d, b + '.json')
-    return Promise.all([
-      mkdirpAsync(dirname(htmlOutput)).then(() => engine(file)),
-      loadJSON(metaJSON).catch(err => {
-        if (err.code === 'ENOENT') return {}
-        throw err
+
+function pack ({ viewEngine = 'dust', languages }) {
+  mkdir('-p', 'files')
+  mkdir('-p', 'static')
+  mkdir('-p', '.penguin')
+  if (!test('-f', 'files/index.html')) {
+    fs.writeFileSync('files/index.html', renderIndexHTML({ languages }))
+  }
+  if (!test('-f', 'files/404.html')) {
+    fs.writeFileSync('files/404.html', render404HTML({ languages }))
+  }
+  const env = Object.assign({}, process.env, { NODE_ENV: 'production' })
+  spawnSync(`${__dirname}/create_component_map.js`, [
+    'components', '-b', '-o', '.penguin/components.js'
+  ], { stdio: 'inherit', env })
+  spawnSync(`${__dirname}/create_component_map.js`, [
+    'components', '-o', '.penguin/server_components.js'
+  ], { stdio: 'inherit', env })
+  const files = glob.sync('@(objects|pages)/*.' + viewEngine)
+  return files.reduce((p, file) =>
+    p.then(files =>
+      new Promise((resolve, reject) => {
+        console.error('build server runtime for %s', file)
+        buildServerRuntime({ file })
+          .on('error', reject)
+          .pipe(fs.createWriteStream(file.replace(/\.[^.]+$/, '.js')))
+          .on('error', reject)
+          .on('finish', () => resolve())
       })
-    ])
-    .then(([content, meta]) =>
-      Promise.all([
-        writeFileAsync(htmlOutput, content),
-        writeJSON(jsonOutput, meta, { indent: null })
-      ])
+      .then(() => {
+        let buffer = ''
+        const hash = crypto.createHash('md5')
+        return new Promise((resolve, reject) => {
+          console.error('build client runtime for %s', file)
+          buildClientRuntime({ file })
+            .on('error', reject)
+            .pipe(new Writable({
+              write (chunk, enc, callback) {
+                hash.update(chunk)
+                buffer += chunk
+                callback()
+              }
+            }))
+            .on('finish', () => {
+              const path =
+                join(
+                  'static',
+                  file.replace(/\.[^.]+$/, `.${hash.digest('hex')}.js`)
+                )
+              mkdir('-p', dirname(path))
+              fs.writeFile(path, buffer, err =>
+                err ? reject(err) : resolve([...files, '/' + path])
+              )
+            })
+        })
+      })
     )
-  })
-)
+  , Promise.resolve([]))
+  .then((filesRuntimes) =>
+    Promise.all(
+      files.map((file, i) => {
+        const d = dirname(file)
+        const e = extname(file)
+        const b = basename(file, e)
+        const htmlOutput = join(d, b + '.html')
+        const metaJSON = join(d, b + '.json')
+        return Promise.all([
+          mkdirpAsync(dirname(htmlOutput)).then(() =>
+            new Promise((resolve, reject) => {
+              console.error('compile template %s', file)
+              compileTemplate({ file, scriptPath: filesRuntimes[i] })
+                .on('error', reject)
+                .pipe(fs.createWriteStream(htmlOutput))
+                .on('error', reject)
+                .on('finish', () => resolve())
+            })
+          ),
+          loadJSON(metaJSON).catch(err => {
+            if (err.code === 'ENOENT') return {}
+            throw err
+          })
+        ])
+      })
+    )
+  )
+}
