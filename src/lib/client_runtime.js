@@ -1,5 +1,3 @@
-import 'whatwg-fetch'
-import 'babel-polyfill'
 import { createStore, compose, applyMiddleware } from 'redux'
 import thunk from 'redux-thunk'
 
@@ -7,7 +5,6 @@ import reduce from './reducers'
 
 export default function createClientRuntime ({ components }) {
   let isMounted = false
-  // const isBuilt = !!document.body.getAttribute('data-penguin-built')
   const middleware =
     window.devToolsExtension ? window.devToolsExtension() : f => f
   const els = document.querySelectorAll('[data-component]')
