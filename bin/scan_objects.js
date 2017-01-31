@@ -71,6 +71,8 @@ function createObjectStream ({ databaseDriver, languages }) {
                 this.push({
                   key: `/${language}/${type}/${id}`,
                   value: {},
+                  language,
+                  object: { type, id },
                   template: `objects/${type}`
                 })
               }
