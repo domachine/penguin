@@ -8,7 +8,7 @@ const browserify = require('browserify-middleware')
 const { Router } = require('express')
 const envify = require('envify')
 const { mkdir } = require('shelljs')
-const rollupify = require('../lib/rollupify')
+const rollupify = require('rollupify')
 
 const createFsDriver = require('../fs')
 const createDevelopmentDriver = require('../lib/development_driver')
@@ -35,10 +35,7 @@ function serve ({ staticPrefix = 'static', ext = 'dust', config }) {
   const { languages } = config
   const rollupOpts = {
     config: {
-      onwarn ({ message, code }) {
-        if (code === 'UNRESOLVED_IMPORT') return
-        console.warn(message)
-      },
+      external: id => !id.startsWith('./') && !id.startsWith('/') && !id.startsWith('../'),
       plugins: [require('rollup-plugin-buble')()]
     }
   }

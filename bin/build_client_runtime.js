@@ -7,7 +7,7 @@ const { extname } = require('path')
 const browserify = require('browserify')
 const envify = require('envify')
 const UglifyJS = require('uglify-js')
-const rollupify = require('../lib/rollupify')
+const rollupify = require('rollupify')
 
 const renderClientRuntime = require('./render_client_runtime')
 const compileTemplate = require('./compile_template')
@@ -30,10 +30,7 @@ function buildClientRuntime ({ file }) {
   const ext = extname(file)
   const rollupOpts = {
     config: {
-      onwarn ({ message, code }) {
-        if (code === 'UNRESOLVED_IMPORT') return
-        console.warn(message)
-      },
+      external: id => !id.startsWith('./') && !id.startsWith('/') && !id.startsWith('../'),
       plugins: [require('rollup-plugin-buble')()]
     }
   }
