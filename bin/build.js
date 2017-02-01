@@ -2,11 +2,7 @@
 
 'use strict'
 
-const { parse } = require('path')
-const vm = require('vm')
-const fs = require('fs')
 const { join } = require('path')
-const { rm } = require('shelljs')
 const mergeStream = require('merge-stream')
 const ncp = require('ncp')
 const resolveMod = require('resolve')
