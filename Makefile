@@ -1,0 +1,4 @@
+test:
+	@standard
+
+.PHONY: test
