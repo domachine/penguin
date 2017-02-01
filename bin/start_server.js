@@ -30,12 +30,6 @@ function startServer ({
 }) {
   const langIndex = new Set(languages)
   const app = express()
-  app.use((req, res, next) => {
-    res.renderPage = params => viewDriver.page({ params }, res, next)
-    res.renderObject = params =>
-      viewDriver.object({ databaseDriver, params }, res, next)
-    next()
-  })
   middleware.forEach(m => app.use(m))
   app.use('/static', viewDriver.static)
   app.put('/:language.json', bodyParser(), (req, res, next) => {
@@ -85,7 +79,7 @@ function startServer ({
     ])
     .then(([fieldss, meta]) => {
       const fields = Object.assign({}, ...fieldss)
-      renderTemplate(res, viewDriver.page(name), { fields, meta, language })
+      renderTemplate(res, viewDriver.page(name), { fields, meta, language }, next)
     })
   })
   app.get('/:language/:type/:id', (req, res, next) => {
@@ -106,7 +100,7 @@ function startServer ({
     ])
     .then(([fieldss, meta]) => {
       const fields = Object.assign({}, ...fieldss)
-      renderTemplate(res, viewDriver.object(type), { fields, meta, language })
+      renderTemplate(res, viewDriver.object(type), { fields, meta, language }, next)
     })
   })
   if (publishDriver) {
@@ -130,9 +124,15 @@ function startServer ({
     console.error('> Ready on port ' + port)
   })
 
-  function renderTemplate (res, stream, { language, meta, fields }) {
+  function renderTemplate (res, stream, { language, meta, fields }, next) {
     let buffer = ''
     stream
+      .on('error', err => {
+        if (err.code === 'ENOENT' || err.code === 'EISDIR') {
+          return next(createError(404))
+        }
+        next(err)
+      })
       .pipe(new Transform({
         transform (chunk, enc, callback) {
           buffer += chunk
