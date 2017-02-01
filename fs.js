@@ -6,12 +6,10 @@ const glob = require('glob')
 const loadJSON = require('load-json-file')
 const writeJSON = require('write-json-file')
 
-const {
-  object: objectPathRegexp,
-  page: pagePathRegexp
-} = require('./lib/path_regexps')
-
 module.exports = createDatabase
+
+const objectPathRegexp = /^\/((?:[^/]+?))\/((?:[^/]+?))\/((?:[^/]+?))(?:\/(?=$))?$/i
+const pagePathRegexp = /^\/((?:[^/]+?))(?:\/((?:[^/]+?)))?(?:\/(?=$))?$/i
 
 function createDatabase ({ prefix = 'data' }) {
   const load = path => loadJSON(path).catch(() => null)
