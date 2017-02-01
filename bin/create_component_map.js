@@ -6,15 +6,17 @@ const fs = require('fs')
 const { join, basename, relative } = require('path')
 const glob = require('glob')
 const toPascal = require('to-pascal-case')
-const minimist = require('minimist')
 const gaze = require('gaze')
 const resolveModule = require('resolve')
 
-process.on('unhandledRejection', err => { throw err })
-main()
+module.exports = createComponentMap
 
-function main () {
-  const args = minimist(process.argv.slice(2))
+if (require.main === module) {
+  process.on('unhandledRejection', err => { throw err })
+  main(require('minimist')(process.argv.slice(2)))
+}
+
+function main (args) {
   const dir = args._[0] || 'components'
   const output = args.output || args.o || '-'
   const browser = args.browser || args.b || false
@@ -46,6 +48,18 @@ function main () {
     })
     generator()
   }
+}
+
+function createComponentMap ({ pattern = 'components/*', output = '-', browser = false }) {
+  const writer = createWriter({
+    stream: createStreamFactory({ output }),
+    pattern,
+    output,
+    browser
+  })
+  const resolver = createResolver({ pattern, browser })
+  const generator = createGenerator({ resolver, writer })
+  return generator()
 }
 
 function createGenerator ({ resolver, writer }) {
