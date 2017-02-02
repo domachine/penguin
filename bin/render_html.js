@@ -53,45 +53,24 @@ function error (msg) {
 }
 
 function createOutputStream ({ databaseDriver, config, output = 'build' }) {
-  const globalsCache = {}
   const writer = createHTMLWriter({
     stateSerializer: createStateSerializer({ config })
   })
   return new Writable({
     objectMode: true,
     write (chunk, enc, callback) {
-      const { key, value, template, language } = chunk
-      const path = join(output, key)
-      const tplDataPath = template + '.json'
-      const tplHTMLPath = template + '.html'
-      const tplJSPath = template + '.js'
+      const path = join(output, chunk.key)
       Promise.all([
-        globalsCache[language]
-          ? Promise.resolve(globalsCache[language])
-          : Promise.all([
-            databaseDriver.getGlobals({ language }),
-            databaseDriver.getGlobals({ language: null })
-          ]).then(globals => Object.assign({}, ...globals)),
-        readFileAsync(tplHTMLPath).catch(() => null),
-        loadJSONSafe(tplDataPath),
-        readFileAsync(tplJSPath)
+        readFileAsync(chunk.template + '.html').catch(() => null),
+        loadJSONSafe(chunk.template + '.json'),
+        readFileAsync(chunk.template + '.js')
       ])
-      .then(([globals, tpl, meta, js]) => {
+      .then(([tpl, meta, js]) => {
         if (tpl == null) return
-        return (
-          (chunk.object
-            ? databaseDriver.getObject({
-              type: chunk.object.type,
-              id: chunk.object.id
-            })
-            : databaseDriver.getPage({ name: chunk.page.name })
-          )
-          .then(notLocalized => {
-            const fields = Object.assign({}, value, notLocalized, globals)
-            if (meta == null) meta = {}
-            return writer(path + '.html', tpl, js, { fields, meta, language })
-          })
-        )
+        if (meta == null) meta = {}
+        const fields = chunk.value
+        const { language } = chunk
+        return writer(path + '.html', tpl, js, { fields, meta, language })
       })
       .then(() => callback())
       .catch(callback)

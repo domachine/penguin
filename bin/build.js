@@ -10,6 +10,7 @@ const Bluebird = require('bluebird')
 
 const scanObjects = require('./scan_objects')
 const scanPages = require('./scan_pages')
+const completeRecords = require('./complete_records')
 const renderHTML = require('./render_html')
 
 const { penguin: config } = require(join(process.cwd(), 'package.json'))
@@ -44,6 +45,10 @@ function build ({ databaseDriver, config, output = 'build' }) {
   const { languages } = config
   const objects = scanObjects({ databaseDriver, languages })
   const pages = scanPages({ databaseDriver, languages })
+  const complete = completeRecords({
+    databaseDriver,
+    defaultLanguage: languages[0]
+  })
   const render = renderHTML({ databaseDriver, config, output })
   return ncpAsync('files', output)
     .then(() =>
@@ -51,6 +56,7 @@ function build ({ databaseDriver, config, output = 'build' }) {
         ncpAsync('static', join(output, 'static')),
         new Promise((resolve, reject) => {
           mergeStream(objects, pages)
+            .pipe(complete)
             .pipe(render)
             .on('error', reject)
             .on('finish', () => resolve())
