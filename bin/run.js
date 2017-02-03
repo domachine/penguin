@@ -26,13 +26,13 @@ function main (args) {
   const basedir = args.basedir || args.b || process.cwd()
   const port = args.port || args.p || 3000
   if (typeof databaseDriverArgs !== 'object') {
-    return error('no database driver given (e.g. --database-driver [ mydriver ])')
+    return error('penguin: no database driver given (e.g. --database-driver [ mydriver ])')
   }
   if (typeof viewDriverArgs !== 'object') {
-    return error('no view driver given (e.g. --view-driver [ mydriver ])')
+    return error('penguin: no view driver given (e.g. --view-driver [ mydriver ])')
   }
   if (typeof publishDriverArgs !== 'object') {
-    return error('no publish driver given (e.g. --publish-driver [ mydriver ])')
+    return error('penguin: no publish driver given (e.g. --publish-driver [ mydriver ])')
   }
   const middleware =
     Array.isArray(middlewareArgs)

@@ -20,7 +20,7 @@ if (!command) {
 }
 const pkg = require(`${process.cwd()}/package.json`).penguin
 if (!Array.isArray(pkg.languages)) {
-  console.error('no languages in package.json specified. e.g.:')
+  console.error('penguin: no languages in package.json specified. e.g.:')
   console.error(
 `
     {

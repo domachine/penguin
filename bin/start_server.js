@@ -121,7 +121,7 @@ function startServer ({
   }
   if (viewDriver.error) app.use(viewDriver.error)
   app.listen(port, () => {
-    console.error('> Ready on port ' + port)
+    console.error('penguin: ready on port ' + port)
   })
 
   function renderTemplate (res, stream, { language, meta, fields }, next) {

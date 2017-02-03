@@ -14,7 +14,7 @@ function main (args) {
   const buildDir = args['build-dir'] || args.d || 'build'
   const publishDriverArgs = args['publish-driver']
   if (typeof publishDriverArgs !== 'object') {
-    return error('no publish driver given (e.g. --publish-driver [ mydriver ])')
+    return error('penguin: no publish driver given (e.g. --publish-driver [ mydriver ])')
   }
   createModuleFromArgs(publishDriverArgs, { basedir })
     .then(publishDriver => publish({ buildDir, publishDriver }))

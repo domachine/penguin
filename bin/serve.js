@@ -30,7 +30,8 @@ function main (args) {
   const middlewareArgs = args['middleware'] || args.m
   const config = require(`${process.cwd()}/package.json`).penguin
   if (process.env.NODE_ENV === 'production') {
-    console.error('WARNING! You\'re running penguin.js in production but it\'s not ready, yet!')
+    console.error('penguin: WARNING! You\'re running the `serve` command in production!')
+    console.error('penguin:          Don\'t do this! Use the `run` command instead')
   }
   const middleware =
     Array.isArray(middlewareArgs)

@@ -138,6 +138,6 @@ function createWriter ({ stream, output, pattern, browser }) {
         )
         .join('\n')
     )
-    console.error(output + ' written')
+    console.error('penguin: ' + output + ' written')
   }
 }

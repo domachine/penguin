@@ -15,7 +15,7 @@ if (require.main === module) {
 
 function main (args) {
   const file = args._[0]
-  if (!file) return error('No file given (e.g. myfile.html)')
+  if (!file) return error('penguin: no file given (e.g. myfile.html)')
   return compileTemplate({ file })
     .pipe(process.stdout)
 }

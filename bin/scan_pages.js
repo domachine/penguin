@@ -16,7 +16,7 @@ if (require.main === module) {
 function main (args) {
   const languageArgs = (args.languages || args.l)
   if (!languageArgs) {
-    return error('no languages given (e.g. --languages [ de en ])')
+    return error('penguin: no languages given (e.g. --languages [ de en ])')
   }
   const languages =
     typeof languageArgs === 'string'
@@ -25,7 +25,7 @@ function main (args) {
   const databaseDriverArgs = args['database-driver'] || args.d
   const basedir = args.basedir || args.b || process.cwd()
   if (typeof databaseDriverArgs !== 'object') {
-    return error('no database driver given (e.g. -d [ mydriver ])')
+    return error('penguin: no database driver given (e.g. -d [ mydriver ])')
   }
   const databaseDriverModule = databaseDriverArgs._.shift()
   resolve(databaseDriverModule, { basedir }, (err, p) => {

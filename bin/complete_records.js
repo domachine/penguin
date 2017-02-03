@@ -17,9 +17,9 @@ function main (args) {
   const databaseDriverArgs = args['database-driver'] || args.d
   const basedir = args.basedir || args.b || process.cwd()
   const defaultLanguage = args['default-language'] || args.l
-  if (!defaultLanguage) return error('no default language given (e.g. -l en)')
+  if (!defaultLanguage) return error('penguin: no default language given (e.g. -l en)')
   if (typeof databaseDriverArgs !== 'object') {
-    return error('no database driver given (e.g. -d [ mydriver ])')
+    return error('penguin: no database driver given (e.g. -d [ mydriver ])')
   }
   const databaseDriverModule = databaseDriverArgs._.shift()
   resolve(databaseDriverModule, { basedir }, (err, p) => {

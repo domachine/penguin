@@ -57,7 +57,7 @@ function pack ({ viewEngine = 'dust', languages }) {
     files.reduce((p, file) =>
       p.then(files =>
         new Promise((resolve, reject) => {
-          console.error('build server runtime for %s', file)
+          console.error('penguin: build server runtime for %s', file)
           buildServerRuntime({ file })
             .on('error', reject)
             .pipe(fs.createWriteStream(file.replace(/\.[^.]+$/, '.js')))
@@ -68,7 +68,7 @@ function pack ({ viewEngine = 'dust', languages }) {
           let buffer = ''
           const hash = crypto.createHash('md5')
           return new Promise((resolve, reject) => {
-            console.error('build client runtime for %s', file)
+            console.error('penguin: build client runtime for %s', file)
             buildClientRuntime({ file })
               .on('error', reject)
               .pipe(new Writable({
@@ -105,7 +105,7 @@ function pack ({ viewEngine = 'dust', languages }) {
         return Promise.all([
           mkdirpAsync(dirname(htmlOutput)).then(() =>
             new Promise((resolve, reject) => {
-              console.error('compile template %s', file)
+              console.error('penguin: compile template %s', file)
               compileTemplate({ file, scriptPath: filesRuntimes[i] })
                 .on('error', reject)
                 .pipe(fs.createWriteStream(htmlOutput))

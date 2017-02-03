@@ -31,7 +31,7 @@ function main (args) {
   const output = args.output || args.o
   const { penguin: config } = require(`${process.cwd()}/package.json`)
   if (typeof databaseDriverArgs !== 'object') {
-    return error('no database driver given (e.g. -d [ mydriver ])')
+    return error('penguin: no database driver given (e.g. -d [ mydriver ])')
   }
   const databaseDriverModule = databaseDriverArgs._.shift()
   resolve(databaseDriverModule, { basedir }, (err, p) => {
@@ -81,7 +81,7 @@ function createOutputStream ({ databaseDriver, config, output = 'build' }) {
 function createHTMLWriter ({ stateSerializer }) {
   return (path, template, js, { fields, meta, language }) =>
     new Promise((resolve, reject) => {
-      console.error('render %s', path)
+      console.error('penguin: render %s', path)
       mkdirp(dirname(path), err => {
         if (err) return reject(err)
         const output = fs.createWriteStream(path)

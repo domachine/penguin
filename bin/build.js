@@ -25,15 +25,12 @@ if (require.main === module) {
 }
 
 function main (args) {
-  // const runtimePath = args['server-runtime'] || args.s || 'server_runtime.js'
   const defaultDriver = { _: ['penguin.js/fs'], prefix: 'data' }
   const databaseDriverArgs = args['database-driver'] || args.d || defaultDriver
   const basedir = args.basedir || args.b || process.cwd()
-  // const prefix = args.prefix || args.p || 'dist'
   const output = args.output || args.o
-  // const runtime = new vm.Script(fs.readFileSync(runtimePath, 'utf-8'))
   if (typeof databaseDriverArgs !== 'object') {
-    return error('no database driver given (e.g. -d [ mydriver ])')
+    return error('penguin: no database driver given (e.g. -d [ mydriver ])')
   }
   createModuleFromArgs(databaseDriverArgs, { basedir })
     .then(databaseDriver => {
