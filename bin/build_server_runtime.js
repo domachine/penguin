@@ -56,6 +56,10 @@ function buildServerRuntime ({ file }) {
   .transform(file => rollupify(file + '.js', rollupOpts))
   .transform(envify)
   .bundle()
+  .on('error', err => {
+    if (err.snippet) console.error(err.snippet)
+    console.error(err.message)
+  })
   .pipe(createUglify())
 }
 
