@@ -100,19 +100,20 @@ function createResolver ({ pattern, browser }) {
         resolveModule(entry.file, { basedir: process.cwd() }, (err, res, pkg) => {
           if (err) return reject(err)
           if (!pkg || typeof pkg.browser !== 'string') return resolve(entry)
-          const prefix = entry.file.startsWith('./') ? '../' : ''
+          const prefix = entry.file.startsWith('./') ? './' : ''
           const modulePath =
             browser
               ? ((!pkg || typeof pkg.browser !== 'string')
                 ? entry.file
                 : prefix + join(entry.file, pkg.browser))
               : prefix + relative(process.cwd(), res)
-          resolve({
-            name: entry.name,
-            file: modulePath
-          })
+          resolve({ name: entry.name, file: modulePath })
         })
       })
+      .then(entry => ({
+        name: entry.name,
+        file: entry.file.replace(/^\.\//, '../')
+      }))
     ))
   }
 }
