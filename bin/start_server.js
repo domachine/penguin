@@ -72,6 +72,7 @@ function startServer ({
           : Promise.resolve({}),
         databaseDriver.getPage({ language, name }),
         databaseDriver.getPage({ language: null, name }),
+        databaseDriver.getGlobals({ language: languages[0] }),
         databaseDriver.getGlobals({ language }),
         databaseDriver.getGlobals({ language: null })
       ]),
@@ -80,7 +81,7 @@ function startServer ({
     .then(([fieldss, meta]) => {
       const fields = Object.assign({}, ...fieldss)
       renderTemplate(res, viewDriver.page(name), { fields, meta, language }, next)
-    })
+    }, next)
   })
   app.get('/:language/:type/:id', (req, res, next) => {
     const { params: { type, id, language } } = req
@@ -101,7 +102,7 @@ function startServer ({
     .then(([fieldss, meta]) => {
       const fields = Object.assign({}, ...fieldss)
       renderTemplate(res, viewDriver.object(type), { fields, meta, language }, next)
-    })
+    }, next)
   })
   if (publishDriver) {
     app.post('/api/v1/publish', (req, res, next) => {
