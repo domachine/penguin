@@ -1,8 +1,7 @@
 import { isSaving, isBuilt } from '../selectors'
-import { save } from '../actions'
 
 export default function createSaveButton (ownProps, el) {
-  const { store } = ownProps
+  const { store, save } = ownProps
   return {
     componentDidMount () {
       store.subscribe(onUpdate)
@@ -13,7 +12,7 @@ export default function createSaveButton (ownProps, el) {
 
   function onClick (e) {
     e.preventDefault()
-    store.dispatch(save())
+    save()
   }
 
   function onUpdate () {

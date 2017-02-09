@@ -1,5 +1,6 @@
 'use strict'
 
+const fs = require('fs')
 const { join, relative } = require('path')
 const { Readable } = require('stream')
 const glob = require('glob')
@@ -43,6 +44,17 @@ function createDatabase ({ prefix = 'data' }) {
     saveObject (data, { language, type, id }) {
       language = language || 'not_localized'
       return save(join(prefix, language, type, id) + '.json', data)
+    },
+
+    destroyObject ({ type, id }) {
+      return Promise.all(
+        glob.sync(join(prefix, '*', type, id + '.json'))
+          .map(p =>
+            new Promise((resolve, reject) => {
+              fs.unlink(p, err => err ? reject(err) : resolve())
+            })
+          )
+      )
     },
 
     getPages ({ language = '*' }) {

@@ -104,6 +104,11 @@ function startServer ({
       renderTemplate(res, viewDriver.object(type), { fields, meta, language }, next)
     }, next)
   })
+  app.delete('/:type/:id', (req, res, next) => {
+    const { params: { type, id } } = req
+    databaseDriver.destroyObject({ type, id })
+      .then(() => res.send(), next)
+  })
   if (publishDriver) {
     app.post('/api/v1/publish', (req, res, next) => {
       mkdtemp(tmpPrefix, (err, output) => {
