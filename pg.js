@@ -42,7 +42,7 @@ module.exports = ({ url, ssl = false }) => {
     getObject ({ language, type, id }) {
       language = language || 'not_localized'
       const statement =
-        `SELECT fields FROM pages
+        `SELECT fields FROM objects
         WHERE id = $1 AND type = $2 AND language = $3 LIMIT 1`
       return pool.query(statement, [id, type, language])
         .then(r => {
@@ -76,6 +76,13 @@ module.exports = ({ url, ssl = false }) => {
         VALUES ($1, $2, $3, $4)
         ON CONFLICT (id, type, language) DO UPDATE SET fields = $4`
       return pool.query(statement, [id, type, language, JSON.stringify(data)])
+    },
+
+    destroyObject ({ type, id }) {
+      const statement = (
+        `DELETE FROM objects WHERE type = $1 AND id = $2`
+      )
+      return pool.query(statement, [type, id])
     },
 
     getPages ({ language }) {
