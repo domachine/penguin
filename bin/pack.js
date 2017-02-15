@@ -11,6 +11,7 @@ const glob = require('glob')
 const mkdirp = require('mkdirp')
 const loadJSON = require('load-json-file')
 const Bluebird = require('bluebird')
+const resolveMod = require('resolve')
 
 const renderIndexHTML = require('../pages/index')
 const render404HTML = require('../pages/404')
@@ -31,10 +32,20 @@ if (require.main === module) {
 function main (args) {
   const { penguin: { languages } } = require(`${process.cwd()}/package.json`)
   const viewEngine = args['view-engine'] || args.v
-  pack({ viewEngine, languages })
+  const basedir = args.basedir || args.b || process.cwd()
+  const transformArgs = args['transform'] || args.t
+  const transforms =
+    Array.isArray(transformArgs)
+      ? transformArgs
+      : (transformArgs ? [transformArgs] : [])
+  Promise.all(
+    transforms.map(a => createModuleFromArgs(a, { basedir }))
+  ).then(transforms =>
+    pack({ viewEngine, languages, transforms })
+  )
 }
 
-function pack ({ viewEngine = 'dust', languages }) {
+function pack ({ viewEngine = 'dust', languages, transforms }) {
   mkdir('-p', 'files')
   mkdir('-p', 'static')
   mkdir('-p', '.penguin')
@@ -58,7 +69,7 @@ function pack ({ viewEngine = 'dust', languages }) {
       p.then(files =>
         new Promise((resolve, reject) => {
           console.error('penguin: build server runtime for %s', file)
-          buildServerRuntime({ file })
+          buildServerRuntime({ file, transforms })
             .on('error', reject)
             .pipe(fs.createWriteStream(file.replace(/\.[^.]+$/, '.js')))
             .on('error', reject)
@@ -69,7 +80,7 @@ function pack ({ viewEngine = 'dust', languages }) {
           const hash = crypto.createHash('md5')
           return new Promise((resolve, reject) => {
             console.error('penguin: build client runtime for %s', file)
-            buildClientRuntime({ file })
+            buildClientRuntime({ file, transforms })
               .on('error', reject)
               .pipe(new Writable({
                 write (chunk, enc, callback) {
@@ -121,4 +132,20 @@ function pack ({ viewEngine = 'dust', languages }) {
       })
     )
   )
+}
+
+function createModuleFromArgs (a, opts) {
+  const name = a._[0]
+  const args = Object.assign({}, a, { _: a._.slice(1) })
+  return createModule(name, opts, args)
+}
+
+function createModule (mod, opts, ...args) {
+  return new Promise((resolve, reject) => {
+    resolveMod(mod, opts, (err, p) => {
+      if (err) return reject(err)
+      const constructor = require(p)
+      resolve(constructor(...args))
+    })
+  })
 }

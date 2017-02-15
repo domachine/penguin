@@ -2,20 +2,15 @@
 
 'use strict'
 
-const { PassThrough, Transform } = require('stream')
-const browserify = require('browserify-middleware')
 const { Router } = require('express')
-const envify = require('envify')
 const { mkdir } = require('shelljs')
-const rollupify = require('rollupify')
 const resolveMod = require('resolve')
 const gaze = require('gaze')
 
 const createFsDriver = require('../fs')
 const createDevelopmentDriver = require('../lib/development_driver')
 const createStateSerializer = require('../lib/state')
-const renderClientRuntime = require('./render_client_runtime')
-const compileTemplate = require('./compile_template')
+const buildClientRuntime = require('./build_client_runtime')
 const startServer = require('./start_server')
 const createComponentMap = require('./create_component_map')
 
@@ -28,6 +23,7 @@ function main (args) {
   const ext = args['view-engine'] || args.v
   const basedir = args.basedir || args.b || process.cwd()
   const middlewareArgs = args['middleware'] || args.m
+  const transformArgs = args['transform'] || args.t
   const config = require(`${process.cwd()}/package.json`).penguin
   if (process.env.NODE_ENV === 'production') {
     console.error('penguin: WARNING! You\'re running the `serve` command in production!')
@@ -37,8 +33,16 @@ function main (args) {
     Array.isArray(middlewareArgs)
       ? middlewareArgs
       : (middlewareArgs ? [middlewareArgs] : [])
-  Promise.all(middleware.map(a => createModuleFromArgs(a, { basedir })))
-    .then(middleware => serve({ staticPrefix, ext, config, middleware }))
+  const transforms =
+    Array.isArray(transformArgs)
+      ? transformArgs
+      : (transformArgs ? [transformArgs] : [])
+  Promise.all([
+    Promise.all(middleware.map(a => createModuleFromArgs(a, { basedir }))),
+    Promise.all(transforms.map(a => createModuleFromArgs(a, { basedir })))
+  ]).then(([middleware, transforms]) =>
+    serve({ staticPrefix, ext, config, middleware, transforms })
+  )
 }
 
 function serve ({
@@ -46,17 +50,10 @@ function serve ({
   ext = 'dust',
   config,
   middleware = [],
+  transforms = [],
   basedir = process.cwd()
 }) {
   const { languages } = config
-  const rollupOpts = {
-    config: {
-      external: id => !id.startsWith('./') && !id.startsWith('/') && !id.startsWith('../'),
-      plugins: [require('rollup-plugin-buble')()]
-    }
-  }
-  const toTransform = fn =>
-    file => file.endsWith(`.${ext}`) ? fn(file) : new PassThrough()
   mkdir('-p', '.penguin')
   const generateComponentMap = () =>
     createComponentMap({
@@ -90,26 +87,8 @@ function serve ({
         middleware: [
           ...middleware,
           Router()
-            .use('/static', browserify(process.cwd(), {
-              grep: new RegExp(`\\.${ext}$`),
-              standalone: 'Penguin',
-              transform: [
-                toTransform(file =>
-                  new Transform({
-                    transform (chunk, enc, callback) { callback() },
-                    flush (callback) {
-                      compileTemplate({ file })
-                        .on('error', callback)
-                        .on('data', d => this.push(d))
-                        .on('end', () => callback())
-                    }
-                  })
-                ),
-                toTransform(() => renderClientRuntime()),
-                file => rollupify(file + '.js', rollupOpts),
-                envify
-              ]
-            }))
+            .use('/static',
+              buildClientRuntime.middleware({ ext: `.${ext}`, transforms }))
             .use((err, req, res, next) => {
               if (err.snippet) console.error(err.snippet)
               next(err)

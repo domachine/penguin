@@ -26,12 +26,12 @@ function main (args) {
     .pipe(process.stdout)
 }
 
-function buildServerRuntime ({ file }) {
+function buildServerRuntime ({ file, transforms = [] }) {
   const ext = extname(file)
   const rollupOpts = {
     config: {
       external: id => !id.startsWith('./') && !id.startsWith('/') && !id.startsWith('../'),
-      plugins: [require('rollup-plugin-buble')()]
+      plugins: [...transforms, require('rollup-plugin-buble')()]
     }
   }
   const toTransform = fn =>

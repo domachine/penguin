@@ -5,6 +5,7 @@
 const { Transform, PassThrough } = require('stream')
 const { extname } = require('path')
 const browserify = require('browserify')
+const browserifyMiddleware = require('browserify-middleware')
 const envify = require('envify')
 const UglifyJS = require('uglify-js')
 const rollupify = require('rollupify')
@@ -12,8 +13,8 @@ const rollupify = require('rollupify')
 const renderClientRuntime = require('./render_client_runtime')
 const compileTemplate = require('./compile_template')
 
-module.exports = buildClientRuntime
-process.env.NODE_ENV = 'production'
+exports = module.exports = buildClientRuntime
+exports.middleware = middleware
 
 if (require.main === module) {
   main(require('subarg')(process.argv.slice(2)))
@@ -26,41 +27,61 @@ function main (args) {
     .pipe(process.stdout)
 }
 
-function buildClientRuntime ({ file }) {
+function buildClientRuntime ({ file, transforms }) {
+  process.env.NODE_ENV = 'production'
   const ext = extname(file)
-  const rollupOpts = {
-    config: {
-      external: id => !id.startsWith('./') && !id.startsWith('/') && !id.startsWith('../'),
-      plugins: [require('rollup-plugin-buble')()]
-    }
-  }
-  const toTransform = fn =>
-    file => file.endsWith(ext) ? fn(file) : new PassThrough()
   return browserify({
     entries: [file],
     standalone: 'Penguin',
-    basedir: process.cwd()
+    basedir: process.cwd(),
+    transform: createTransforms({ ext, transforms })
   })
-  .transform(toTransform(file =>
-    new Transform({
-      transform (chunk, enc, callback) { callback() },
-      flush (callback) {
-        compileTemplate({ file })
-          .on('error', callback)
-          .on('data', d => this.push(d))
-          .on('end', () => callback())
-      }
-    })
-  ))
-  .transform(toTransform(() => renderClientRuntime()))
-  .transform(file => rollupify(file + '.js', rollupOpts))
-  .transform(envify)
   .bundle()
   .on('error', err => {
     if (err.snippet) console.error(err.snippet)
     console.error(err.message)
   })
   .pipe(createUglify())
+}
+
+function middleware ({ ext, transforms }) {
+  return browserifyMiddleware(process.cwd(), {
+    grep: new RegExp(`\\${ext}$`),
+    standalone: 'Penguin',
+    transform: createTransforms({ ext, transforms })
+  })
+}
+
+function createTransforms ({ ext, transforms = [] }) {
+  const rollupOpts = {
+    config: {
+      external: id => !id.startsWith('./') && !id.startsWith('/') && !id.startsWith('../'),
+      plugins: [...transforms, require('rollup-plugin-buble')()]
+    }
+  }
+  const toPageTransform = fn =>
+    file => (
+      file.match(new RegExp(`^${process.cwd()}/(pages|objects)/.+${ext}$`))
+        ? fn(file)
+        : new PassThrough()
+    )
+
+  return [
+    toPageTransform(file =>
+      new Transform({
+        transform (chunk, enc, callback) { callback() },
+        flush (callback) {
+          compileTemplate({ file })
+            .on('error', callback)
+            .on('data', d => this.push(d))
+            .on('end', () => callback())
+        }
+      })
+    ),
+    toPageTransform(() => renderClientRuntime()),
+    file => rollupify(file + '.js', rollupOpts),
+    envify
+  ]
 }
 
 function createUglify () {
