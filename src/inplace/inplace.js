@@ -1,3 +1,5 @@
+import he from 'he'
+
 import { createValueSelector, isEditable } from '../selectors'
 import { update } from '../actions'
 
@@ -29,11 +31,11 @@ export default function createInplace (ownProps, el) {
 
 function createPropCalculator (props) {
   const value = createValueSelector()
+  let innerText = ''
+  if (props.innerHTML) innerText = he.decode(props.innerHTML)
   return function calcProps (state) {
-    const v = value(state, props.field)
-    return Object.assign({
-      value: v == null ? (props.innerHTML || '') : v
-    }, {
+    let v = value(state, props.field)
+    return Object.assign({ value: v == null ? innerText : v }, {
       isEditable: isEditable(state)
     })
   }
