@@ -11,8 +11,9 @@ export default function createServerRenderer ({ components }) {
       const el = $(this)
       const component = components[el.attr('data-component')]
       if (!component) return
+      const ctx = { store, language }
       const markupProps = JSON.parse((el.attr('data-props') || '{}'))
-      const res = component(Object.assign({}, markupProps, { store, language }))
+      const res = component(ctx, markupProps)
       if (typeof res === 'string') el.html(res)
       else if (typeof res.replace === 'string') el.replaceWith($(res.replace))
       else {

@@ -29,10 +29,7 @@ export default function createClientRuntime ({ components }) {
       if (!component) {
         el.innerHTML = `Unable to resolve component '${name}'`
       } else {
-        const propsStr = decodeURIComponent(el.getAttribute('data-props') || '{}')
-        const props = Object.assign(
-          {},
-          JSON.parse(propsStr),
+        const ctx = Object.assign(
           { store, language },
           process.env.PENGUIN_ENV === 'development'
             ? {
@@ -51,7 +48,9 @@ export default function createClientRuntime ({ components }) {
             }
             : null
         )
-        hooks.push(component(props, el))
+        const propsStr = decodeURIComponent(el.getAttribute('data-props') || '{}')
+        const props = JSON.parse(propsStr)
+        hooks.push(component(ctx, props, el))
       }
     })
     isMounted = true

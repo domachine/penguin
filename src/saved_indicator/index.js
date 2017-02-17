@@ -1,8 +1,7 @@
 import createSavedIndicator from './saved_indicator.js'
 
 export function render (props) {
-  const component = createSavedIndicator(props)
-  return component.render()
+  return { replace: '' }
 }
 
 export function mount (props, el) {

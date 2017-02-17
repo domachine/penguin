@@ -1,7 +1,7 @@
 import he from 'he'
 
 import { createValueSelector } from '../selectors'
-import { update } from '../actions'
+import { actions } from 'penguin.js'
 
 export default function createInplace (ownProps, el) {
   const { store, field } = ownProps
@@ -25,7 +25,7 @@ export default function createInplace (ownProps, el) {
 
   function onInput (e) {
     const value = e.target.innerText
-    store.dispatch(update({ [field]: value }))
+    store.dispatch(actions.update({ [field]: value }))
   }
 }
 

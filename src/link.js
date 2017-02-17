@@ -1,3 +1,5 @@
+import xtend from 'xtend'
+
 const renderHref = ({ language, href }) => `/${language}${href}`
 
 function createLink (ownProps, el) {
@@ -17,12 +19,12 @@ function createLink (ownProps, el) {
   }
 }
 
-export function render (props) {
-  const component = createLink(props)
+export function render (ctx, props) {
+  const component = createLink(xtend(props, ctx))
   return component.render()
 }
 
-export function mount (props, el) {
-  const component = createLink(props, el)
+export function mount (ctx, props, el) {
+  const component = createLink(xtend(props, ctx), el)
   component.render()
 }

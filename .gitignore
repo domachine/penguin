@@ -2,7 +2,6 @@
 
 # Ignore transpiled output
 /actions.js
-/actions/*
 /lib/reducers.js
 /lib/reducers/*
 /selectors.js
@@ -13,7 +12,8 @@
 /lib/server_runtime.js
 /lib/penguin.js
 /lib/state.js
-/link/*
-/inplace/*
-/saved_indicator/*
-/save_button/*
+index.js
+/link.js
+/inplace.js
+/saved_indicator.js
+/save_button.js

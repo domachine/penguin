@@ -1,6 +1,7 @@
 import he from 'he'
+import xtend from 'xtend'
 
-import { actions } from 'penguin.js'
+import { update } from './actions'
 
 function createInplace (ownProps, el) {
   const { store, field } = ownProps
@@ -24,7 +25,7 @@ function createInplace (ownProps, el) {
 
   function onInput (e) {
     const value = e.target.innerText
-    store.dispatch(actions.update({ [field]: value }))
+    store.dispatch(update({ [field]: value }))
   }
 
   function createPropCalculator (props) {
@@ -49,13 +50,13 @@ function createInplace (ownProps, el) {
   }
 }
 
-export function render (props) {
-  const component = createInplace(props)
+export function render (ctx, props) {
+  const component = createInplace(xtend(props, ctx))
   return component.render()
 }
 
-export function mount (props, el) {
-  const component = createInplace(props, el)
+export function mount (ctx, props, el) {
+  const component = createInplace(xtend(props, ctx), el)
   component.render()
   component.componentDidMount()
 }

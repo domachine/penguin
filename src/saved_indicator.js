@@ -1,6 +1,7 @@
 import EventEmitter from 'events'
+import xtend from 'xtend'
 
-export default function createSavedIndicator (ownProps, el) {
+function createSavedIndicator (ownProps, el) {
   const { store } = ownProps
   const savedStore = createSavedStore({
     timeout: Number(ownProps.timeout) || 5000
@@ -67,4 +68,14 @@ function createSavedStore ({ timeout }) {
       if (currentID === id) emitHide()
     }, timeout)
   }
+}
+
+export function render () {
+  return { replace: '' }
+}
+
+export function mount (ctx, props, el) {
+  const component = createSavedIndicator(xtend(props, ctx), el)
+  component.render()
+  component.componentDidMount()
 }

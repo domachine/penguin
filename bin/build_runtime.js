@@ -109,8 +109,9 @@ function createPlugins ({
       exclude: 'node_modules/**',
       presets: [
         require('babel-preset-react'),
-        require('babel-preset-es2015-rollup')
-      ]
+        require('babel-preset-es2015').buildPreset({}, { modules: false })
+      ],
+      plugins: [require('babel-plugin-external-helpers')]
     }),
     require('rollup-plugin-replace')({
       'process.env.NODE_ENV': JSON.stringify(env),
@@ -134,7 +135,9 @@ function createPlugins ({
 }
 
 function createRuntimeCode (mode, components) {
-  const module = `penguin.js/lib/${mode}_runtime`
+  const symbol = mode === 'server'
+    ? 'createServerRuntime'
+    : 'createClientRuntime'
   const noop = mode === 'server'
     ? 'function noop (state, $) { return $ }'
     : 'function noop () {}'
@@ -142,7 +145,7 @@ function createRuntimeCode (mode, components) {
     ? '../.penguin/server_components'
     : '../.penguin/components'
   return (
-    `${components.length > 0 ? `import createRuntime from '${module}'` : ''}
+    `${components.length > 0 ? `import { ${symbol} as createRuntime } from 'penguin.js'` : ''}
 ${components.length > 0 ? `import { ${components.join(', ')} } from '${componentModule}'` : ''}
 export default ${components.length > 0
   ? `createRuntime({ components: { ${components.join(', ')} } })`
