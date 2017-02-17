@@ -2,7 +2,6 @@ import { combineReducers } from 'redux'
 
 import {
   UPDATE_FIELDS,
-  SET_EDITABLE,
   SAVE,
   SAVE_SUCCESS,
   SAVE_FAILURE,
@@ -14,11 +13,8 @@ export default combineReducers({
   locals,
   globals,
   languages,
-  context,
-  isEditable,
   isSaving,
-  error,
-  isBuilt
+  error
 })
 
 function fields (state = {}, action) {
@@ -59,19 +55,6 @@ function languages (state = [], action) {
   }
 }
 
-function isBuilt (state = false, action) {
-  return state
-}
-
-function isEditable (state = false, action) {
-  switch (action.type) {
-    case SET_EDITABLE:
-      return action.value
-    default:
-      return state
-  }
-}
-
 function isSaving (state = false, action) {
   switch (action.type) {
     case SAVE:
@@ -90,13 +73,6 @@ function error (state = null, action) {
       return null
     case SAVE_FAILURE:
       return action.error
-    default:
-      return state
-  }
-}
-
-function context (state = null, action) {
-  switch (action.type) {
     default:
       return state
   }

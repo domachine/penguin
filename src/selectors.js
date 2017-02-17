@@ -27,23 +27,10 @@ export const globalFields = createSelector(
 export const localNoLangFields = ({ locals: { notLocalized } }) => notLocalized
 export const globalNoLangFields = ({ globals: { notLocalized } }) => notLocalized
 
-export const currentLanguage = createSelector(
-  ({ context }) => context,
-  context => context && context.language
-)
-
 export const languages = ({ languages }) => languages
-
-export function isEditable ({ isEditable }) {
-  return isEditable
-}
 
 export function isSaving ({ isSaving }) {
   return isSaving
-}
-
-export function isBuilt ({ isBuilt }) {
-  return isBuilt
 }
 
 export function error ({ error }) {

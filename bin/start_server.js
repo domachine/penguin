@@ -1,7 +1,6 @@
 'use strict'
 
 const { mkdtemp } = require('fs')
-const { Transform } = require('stream')
 const qs = require('querystring')
 const express = require('express')
 const bodyParser = require('body-parser').json
@@ -19,11 +18,11 @@ module.exports = startServer
 
 function startServer ({
   tmpPrefix = 'penguin-build-',
+  config,
   prefix,
   viewDriver,
   databaseDriver,
   publishDriver,
-  stateSerializer,
   languages,
   middleware = [],
   port = 3000
@@ -133,12 +132,10 @@ function startServer ({
   function renderTemplate (res, promise, { language, meta, fields }, next) {
     promise.then(code => {
       const $ = cheerio.load(code)
-      const state = stateSerializer({ fields, meta, language })
-      state.isBuilt = false
-      state.isEditable = true
+      const params = { config, fields, meta, language }
       $('body').append(
         `<script>window.Penguin(${
-              serialize(state, { isJSON: true })
+              serialize(params, { isJSON: true })
             })</script>`
       )
       res.send($.html())

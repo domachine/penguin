@@ -74,17 +74,20 @@ function pack ({ viewEngine = 'dust', languages, transforms }) {
         console.error('penguin: build server runtime for %s', file)
         return buildRuntime({ file, mode: 'server', transforms }).then(code =>
           writeFileAsync(file.replace(/\.[^.]+$/, '.js'), code)
-        )
-        .then(() => {
+        ).then(() => {
           console.error('penguin: build client runtime for %s', file)
-          return buildRuntime({ file, mode: 'client', transforms })
-        }).then(code => {
-          const hash = crypto.createHash('md5').update(code).digest('hex')
-          const path =
-            join('static', file.replace(/\.[^.]+$/, `.${hash}.js`))
-          mkdir('-p', dirname(path))
-          return writeFileAsync(path, code).then(() => [...files, '/' + path])
+          return Promise.all(['development', 'production'].map(env =>
+            buildRuntime({ file, mode: 'client', transforms, penguinEnv: env })
+              .then(code => {
+                const hash = crypto.createHash('md5').update(code).digest('hex')
+                const path =
+                  join('static', file.replace(/\.[^.]+$/, `.${env}.${hash}.js`))
+                mkdir('-p', dirname(path))
+                return writeFileAsync(path, code).then(() => '/' + path)
+              })
+          ))
         })
+        .then(runtimePaths => [...files, runtimePaths])
       }), Promise.resolve([]))
   )
   .then((filesRuntimes) =>
@@ -101,7 +104,8 @@ function pack ({ viewEngine = 'dust', languages, transforms }) {
           ).then(source => {
             const driver = drivers[viewEngine]
             const code = compileTemplate(source, {
-              scriptPath: filesRuntimes[i],
+              scriptPath: filesRuntimes[i][0],
+              productionScriptPath: filesRuntimes[i][1],
               driver: driver ? driver() : null
             })
             return writeFileAsync(htmlOutput, code)

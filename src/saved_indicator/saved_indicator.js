@@ -1,6 +1,6 @@
 import EventEmitter from 'events'
 
-import { isSaving, isBuilt, error } from '../selectors'
+import { isSaving, error } from '../selectors'
 
 const renderStyle = ({ hidden }) =>
   hidden ? 'display:none' : ''
@@ -40,18 +40,15 @@ export default function createSavedIndicator (ownProps, el) {
 }
 
 function render (props, el) {
-  if (!el && !props.isBuilt) return { attrs: { style: renderStyle(props) } }
-  else if (!el) return { replace: '' }
+  if (!el && process.env.PENGUIN_ENV === 'development') {
+    return { attrs: { style: renderStyle(props) } }
+  } else if (!el) return { replace: '' }
   const display = props.hidden ? 'none' : ''
   if (display !== el.style.display) el.style.display = display
 }
 
 function mapStateToProps (state) {
-  return {
-    isSaving: isSaving(state),
-    error: error(state),
-    isBuilt: isBuilt(state)
-  }
+  return { isSaving: isSaving(state), error: error(state) }
 }
 
 function createSavedStore ({ timeout }) {

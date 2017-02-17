@@ -14,8 +14,6 @@ const resolve = require('resolve')
 const split = require('split')
 const serialize = require('serialize-javascript')
 
-const createStateSerializer = require('../lib/state')
-
 module.exports = createOutputStream
 
 const readFileAsync = Bluebird.promisify(fs.readFile)
@@ -53,9 +51,7 @@ function error (msg) {
 }
 
 function createOutputStream ({ databaseDriver, config, output = 'build' }) {
-  const writer = createHTMLWriter({
-    stateSerializer: createStateSerializer({ config })
-  })
+  const writer = createHTMLWriter({ config })
   return new Writable({
     objectMode: true,
     write (chunk, enc, callback) {
@@ -78,7 +74,7 @@ function createOutputStream ({ databaseDriver, config, output = 'build' }) {
   })
 }
 
-function createHTMLWriter ({ stateSerializer }) {
+function createHTMLWriter ({ config }) {
   return (path, template, js, { fields, meta, language }) =>
     new Promise((resolve, reject) => {
       console.error('penguin: render %s', path)
@@ -88,17 +84,19 @@ function createHTMLWriter ({ stateSerializer }) {
         const $ = cheerio.load(template)
         const m = { exports: {} }
         const ctx = vm.createContext({ $, module: m, exports: m.exports })
-        const state = stateSerializer({ fields, meta, language })
-        state.isBuilt = true
-        state.isEditable = false
+        const params = { config, fields, meta, language }
         const renderer = new vm.Script(
   `${js}
-  module.exports(${JSON.stringify(state)}, $)`
+  module.exports(${JSON.stringify(params)}, $)`
         )
         renderer.runInContext(ctx)
+        const comment = $('body').contents().last()
+        const productionScriptPath = comment[0].nodeValue
+        $('body > script').last().attr('src', productionScriptPath)
+        comment.remove()
         $('body').append(
           `<script>window.Penguin(${
-            serialize(state, { isJSON: true })
+            serialize(params, { isJSON: true })
           })</script>`
         )
         output.write($.html())

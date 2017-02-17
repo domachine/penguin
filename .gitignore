@@ -7,13 +7,12 @@
 /lib/reducers/*
 /selectors.js
 /selectors/*
-/lib/state_serializer.js
 /lib/client_runtime.js
 /lib/client_state_loader.js
 /lib/dom_scanner.js
 /lib/server_runtime.js
 /lib/penguin.js
-/lib/state_deserializer.js
+/lib/state.js
 /link/*
 /inplace/*
 /saved_indicator/*

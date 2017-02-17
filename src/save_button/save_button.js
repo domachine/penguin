@@ -1,4 +1,4 @@
-import { isSaving, isBuilt } from '../selectors'
+import { isSaving } from '../selectors'
 
 export default function createSaveButton (ownProps, el) {
   const { store, save } = ownProps
@@ -26,16 +26,11 @@ export default function createSaveButton (ownProps, el) {
 }
 
 function render (props, el) {
-  if (!el && !props.isBuilt) return props.innerHTML
-  else if (!el) return { replace: '' }
   const disabled = props.isSaving
   if (props.innerHTML !== el.innerHTML) el.innerHTML = props.innerHTML
   if (disabled !== el.disabled) el.disabled = disabled
 }
 
 function mapStateToProps (state) {
-  return {
-    isSaving: isSaving(state),
-    isBuilt: isBuilt(state)
-  }
+  return { isSaving: isSaving(state) }
 }

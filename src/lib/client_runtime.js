@@ -8,6 +8,7 @@ import {
   localFields,
   localNoLangFields
 } from '../selectors'
+import createState from './state'
 import reduce from './reducers'
 
 export default function createClientRuntime ({ components }) {
@@ -15,11 +16,12 @@ export default function createClientRuntime ({ components }) {
   const middleware =
     window.devToolsExtension ? window.devToolsExtension() : f => f
   const els = document.querySelectorAll('[data-component]')
-  return function run (state) {
+  return function run ({ config, fields, meta, language }) {
     // Mount editing mode
     if (isMounted) return
     const hooks = []
     const storeEnhancer = compose(applyMiddleware(thunk), middleware)
+    const state = createState({ config })({ fields, meta, language })
     const store = createStore(reduce, state, storeEnhancer)
     ;[].slice.call(els).forEach(el => {
       const name = el.getAttribute('data-component')
@@ -28,21 +30,27 @@ export default function createClientRuntime ({ components }) {
         el.innerHTML = `Unable to resolve component '${name}'`
       } else {
         const propsStr = decodeURIComponent(el.getAttribute('data-props') || '{}')
-        const props = Object.assign({}, JSON.parse(propsStr), {
-          store,
-          save (callback) {
-            hooks
-              .filter(h => h && typeof h.save === 'function')
-              .forEach(h => h.save())
-            save(store, callback)
-          },
-          destroy (callback) {
-            hooks
-              .filter(h => h && typeof h.destroy === 'function')
-              .forEach(h => h.destroy())
-            destroy(store, callback)
-          }
-        })
+        const props = Object.assign(
+          {},
+          JSON.parse(propsStr),
+          { store, language },
+          process.env.PENGUIN_ENV === 'development'
+            ? {
+              save (callback) {
+                hooks
+                  .filter(h => h && typeof h.save === 'function')
+                  .forEach(h => h.save())
+                save(store, callback)
+              },
+              destroy (callback) {
+                hooks
+                  .filter(h => h && typeof h.destroy === 'function')
+                  .forEach(h => h.destroy())
+                destroy(store, callback)
+              }
+            }
+            : null
+        )
         hooks.push(component(props, el))
       }
     })

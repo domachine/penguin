@@ -8,5 +8,4 @@ export function render (props) {
 export function mount (props, el) {
   const component = createLink(props, el)
   component.render()
-  component.componentDidMount()
 }

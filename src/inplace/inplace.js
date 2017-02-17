@@ -1,6 +1,6 @@
 import he from 'he'
 
-import { createValueSelector, isEditable } from '../selectors'
+import { createValueSelector } from '../selectors'
 import { update } from '../actions'
 
 export default function createInplace (ownProps, el) {
@@ -35,16 +35,16 @@ function createPropCalculator (props) {
   if (props.innerHTML) innerText = he.decode(props.innerHTML)
   return function calcProps (state) {
     let v = value(state, props.field)
-    return Object.assign({ value: v == null ? innerText : v }, {
-      isEditable: isEditable(state)
-    })
+    return Object.assign({ value: v == null ? innerText : v })
   }
 }
 
 function render (props, el) {
-  const { value, isEditable } = props
+  const { value } = props
   if (!el) return props.value
-  const contenteditable = isEditable ? 'true' : 'false'
+  const contenteditable = process.env.PENGUIN_ENV === 'development'
+    ? 'true'
+    : 'false'
   if (el.getAttribute('contenteditable') !== contenteditable) {
     el.setAttribute('contenteditable', contenteditable)
   }

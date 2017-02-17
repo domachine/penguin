@@ -2,7 +2,7 @@
 
 'use strict'
 
-const { extname } = require('path')
+const { extname, relative } = require('path')
 const { rollup } = require('rollup')
 const rollupMiddleware = require('rollup-middleware')
 const cheerio = require('cheerio')
@@ -28,13 +28,33 @@ function main (args) {
     .pipe(process.stdout)
 }
 
-function buildRuntime ({ file, mode, transforms }) {
+function buildRuntime ({ file, mode, transforms, penguinEnv }) {
   const ext = extname(file)
-  const plugins = createPlugins({ ext, transforms, mode, env: 'production' })
+  const plugins = createPlugins({
+    ext,
+    transforms,
+    mode,
+    penguinEnv,
+    env: 'production'
+  })
   return rollup({ entry: file, plugins })
     .then(bundle =>
       bundle.generate({ format: 'umd', moduleName: 'Penguin' }).code
-    )
+    ).catch(err => {
+      if (err.code === 'PARSE_ERROR') {
+        console.error(
+          '%s:%d:%d: %s',
+          relative(process.cwd(), err.loc.file),
+          err.loc.line,
+          err.loc.column,
+          err.message
+        )
+        console.error()
+        console.error(err.frame)
+        console.error()
+      }
+      throw err
+    })
 }
 
 function middleware ({ ext, transforms }) {
@@ -56,7 +76,13 @@ function middleware ({ ext, transforms }) {
   })
 }
 
-function createPlugins ({ ext, mode, transforms = [], env = 'production' }) {
+function createPlugins ({
+  ext,
+  mode,
+  transforms = [],
+  env = 'production',
+  penguinEnv = 'development'
+}) {
   const isTemplate = id =>
     id.match(new RegExp(`^${process.cwd()}/(pages|objects)/.+${ext}$`))
   const driver = drivers[ext.slice(1)]
@@ -87,7 +113,8 @@ function createPlugins ({ ext, mode, transforms = [], env = 'production' }) {
       ]
     }),
     require('rollup-plugin-replace')({
-      'process.env.NODE_ENV': JSON.stringify(env)
+      'process.env.NODE_ENV': JSON.stringify(env),
+      'process.env.PENGUIN_ENV': JSON.stringify(penguinEnv)
     }),
     env === 'production'
       ? (

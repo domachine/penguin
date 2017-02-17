@@ -9,7 +9,6 @@ const gaze = require('gaze')
 
 const createFsDriver = require('../fs')
 const createDevelopmentDriver = require('../lib/development_driver')
-const createStateSerializer = require('../lib/state')
 const buildRuntime = require('./build_runtime')
 const startServer = require('./start_server')
 const createComponentMap = require('./create_component_map')
@@ -94,7 +93,7 @@ function serve ({
               next(err)
             })
         ],
-        stateSerializer: createStateSerializer({ config }),
+        config,
         port: process.env.PORT || 3000
       })
     )

@@ -5,7 +5,6 @@
 const subarg = require('subarg')
 const resolveMod = require('resolve')
 
-const createStateSerializer = require('../lib/state')
 const startServer = require('./start_server')
 
 process.on('unhandledRejection', err => { throw err })
@@ -55,7 +54,7 @@ function main (args) {
       languages,
       middleware,
       port,
-      stateSerializer: createStateSerializer({ config })
+      config
     })
   })
 }
