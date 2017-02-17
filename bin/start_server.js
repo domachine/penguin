@@ -130,34 +130,23 @@ function startServer ({
     console.error('penguin: ready on port ' + port)
   })
 
-  function renderTemplate (res, stream, { language, meta, fields }, next) {
-    let buffer = ''
-    stream
-      .on('error', err => {
-        if (err.code === 'ENOENT' || err.code === 'EISDIR') {
-          return next(createError(404))
-        }
-        next(err)
-      })
-      .pipe(new Transform({
-        transform (chunk, enc, callback) {
-          buffer += chunk
-          callback()
-        },
-        flush (callback) {
-          const $ = cheerio.load(buffer)
-          const state = stateSerializer({ fields, meta, language })
-          state.isBuilt = false
-          state.isEditable = true
-          $('body').append(
-            `<script>window.Penguin(${
+  function renderTemplate (res, promise, { language, meta, fields }, next) {
+    promise.then(code => {
+      const $ = cheerio.load(code)
+      const state = stateSerializer({ fields, meta, language })
+      state.isBuilt = false
+      state.isEditable = true
+      $('body').append(
+        `<script>window.Penguin(${
               serialize(state, { isJSON: true })
             })</script>`
-          )
-          this.push($.html())
-          callback()
-        }
-      }))
-      .pipe(res)
+      )
+      res.send($.html())
+    }, err => {
+      if (err.code === 'ENOENT' || err.code === 'EISDIR') {
+        return next(createError(404))
+      }
+      next(err)
+    })
   }
 }

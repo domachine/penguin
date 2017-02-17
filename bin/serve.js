@@ -10,7 +10,7 @@ const gaze = require('gaze')
 const createFsDriver = require('../fs')
 const createDevelopmentDriver = require('../lib/development_driver')
 const createStateSerializer = require('../lib/state')
-const buildClientRuntime = require('./build_client_runtime')
+const buildRuntime = require('./build_runtime')
 const startServer = require('./start_server')
 const createComponentMap = require('./create_component_map')
 
@@ -88,7 +88,7 @@ function serve ({
           ...middleware,
           Router()
             .use('/static',
-              buildClientRuntime.middleware({ ext: `.${ext}`, transforms }))
+              buildRuntime.middleware({ ext: `.${ext}`, transforms }))
             .use((err, req, res, next) => {
               if (err.snippet) console.error(err.snippet)
               next(err)

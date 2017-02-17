@@ -3,7 +3,6 @@
 'use strict'
 
 const crypto = require('crypto')
-const { Writable } = require('stream')
 const { dirname, join, basename, extname } = require('path')
 const fs = require('fs')
 const { mkdir, test } = require('shelljs')
@@ -15,18 +14,23 @@ const resolveMod = require('resolve')
 
 const renderIndexHTML = require('../pages/index')
 const render404HTML = require('../pages/404')
-const buildClientRuntime = require('./build_client_runtime')
-const buildServerRuntime = require('./build_server_runtime')
-const compileTemplate = require('./compile_template')
+const buildRuntime = require('./build_runtime')
+const compileTemplate = require('../lib/penguin_template')
 const createComponentMap = require('./create_component_map')
 
 const mkdirpAsync = Bluebird.promisify(mkdirp)
+const writeFileAsync = Bluebird.promisify(fs.writeFile)
+const readFileAsync = Bluebird.promisify(fs.readFile)
 
 module.exports = pack
 
 if (require.main === module) {
   process.on('unhandledRejection', err => { throw err })
   main(require('subarg')(process.argv.slice(2)))
+}
+
+const drivers = {
+  pug: require('../pug')
 }
 
 function main (args) {
@@ -66,44 +70,22 @@ function pack ({ viewEngine = 'dust', languages, transforms }) {
   ])
   .then(() =>
     files.reduce((p, file) =>
-      p.then(files =>
-        new Promise((resolve, reject) => {
-          console.error('penguin: build server runtime for %s', file)
-          buildServerRuntime({ file, transforms })
-            .on('error', reject)
-            .pipe(fs.createWriteStream(file.replace(/\.[^.]+$/, '.js')))
-            .on('error', reject)
-            .on('finish', () => resolve())
-        })
+      p.then(files => {
+        console.error('penguin: build server runtime for %s', file)
+        return buildRuntime({ file, mode: 'server', transforms }).then(code =>
+          writeFileAsync(file.replace(/\.[^.]+$/, '.js'), code)
+        )
         .then(() => {
-          let buffer = ''
-          const hash = crypto.createHash('md5')
-          return new Promise((resolve, reject) => {
-            console.error('penguin: build client runtime for %s', file)
-            buildClientRuntime({ file, transforms })
-              .on('error', reject)
-              .pipe(new Writable({
-                write (chunk, enc, callback) {
-                  hash.update(chunk)
-                  buffer += chunk
-                  callback()
-                }
-              }))
-              .on('finish', () => {
-                const path =
-                  join(
-                    'static',
-                    file.replace(/\.[^.]+$/, `.${hash.digest('hex')}.js`)
-                  )
-                mkdir('-p', dirname(path))
-                fs.writeFile(path, buffer, err =>
-                  err ? reject(err) : resolve([...files, '/' + path])
-                )
-              })
-          })
+          console.error('penguin: build client runtime for %s', file)
+          return buildRuntime({ file, mode: 'client', transforms })
+        }).then(code => {
+          const hash = crypto.createHash('md5').update(code).digest('hex')
+          const path =
+            join('static', file.replace(/\.[^.]+$/, `.${hash}.js`))
+          mkdir('-p', dirname(path))
+          return writeFileAsync(path, code).then(() => [...files, '/' + path])
         })
-      )
-    , Promise.resolve([]))
+      }), Promise.resolve([]))
   )
   .then((filesRuntimes) =>
     Promise.all(
@@ -115,15 +97,15 @@ function pack ({ viewEngine = 'dust', languages, transforms }) {
         const metaJSON = join(d, b + '.json')
         return Promise.all([
           mkdirpAsync(dirname(htmlOutput)).then(() =>
-            new Promise((resolve, reject) => {
-              console.error('penguin: compile template %s', file)
-              compileTemplate({ file, scriptPath: filesRuntimes[i] })
-                .on('error', reject)
-                .pipe(fs.createWriteStream(htmlOutput))
-                .on('error', reject)
-                .on('finish', () => resolve())
+            readFileAsync(file)
+          ).then(source => {
+            const driver = drivers[viewEngine]
+            const code = compileTemplate(source, {
+              scriptPath: filesRuntimes[i],
+              driver: driver ? driver() : null
             })
-          ),
+            return writeFileAsync(htmlOutput, code)
+          }),
           loadJSON(metaJSON).catch(err => {
             if (err.code === 'ENOENT') return {}
             throw err
