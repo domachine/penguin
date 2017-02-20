@@ -1,5 +1,4 @@
-import { createStore, compose, applyMiddleware } from 'redux'
-import thunk from 'redux-thunk'
+import { createStore } from 'redux'
 
 import { SAVE, SAVE_FAILURE, SAVE_SUCCESS } from '../actions'
 import {
@@ -20,7 +19,7 @@ export default function createClientRuntime ({ components }) {
     // Mount editing mode
     if (isMounted) return
     const hooks = []
-    const storeEnhancer = compose(applyMiddleware(thunk), middleware)
+    const storeEnhancer = middleware
     const state = createState({ config })({ fields, meta, language })
     const store = createStore(reduce, state, storeEnhancer)
     ;[].slice.call(els).forEach(el => {

@@ -56,7 +56,6 @@
     "pg-query-stream": "^1.0.0",
     "pug": "^2.0.0-beta6",
     "redux": "^3.6.0",
-    "redux-thunk": "^2.1.0",
     "reselect": "^2.5.4",
     "resolve": "^1.1.7",
     "rimraf": "^2.5.4",
