@@ -113,7 +113,7 @@ function startServer ({
       mkdtemp(tmpPrefix, (err, output) => {
         if (err) return next(err)
         const rm = () => rimrafAsync(output)
-        build({ databaseDriver, languages, prefix, output })
+        build({ databaseDriver, config, output })
           .then(() => publishDriver(output))
           .then(rm, err => {
             const reject = () => Promise.reject(err)
