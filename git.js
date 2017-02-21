@@ -48,7 +48,8 @@ module.exports = args => {
         function commit () {
           execFile(git, [
             'commit',
-            '--author="Penguin <>"',
+            '-c', 'user.name=Penguin',
+            '-c', 'user.email=<>',
             '-m', 'Update content from penguin.js'
           ], { cwd: output }, err => {
             if (err && err.code !== 1) return reject(err)
