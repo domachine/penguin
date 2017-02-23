@@ -45,6 +45,7 @@
     "http-errors": "^1.5.1",
     "load-json-file": "^2.0.0",
     "merge-stream": "^1.0.1",
+    "minimatch": "^3.0.3",
     "minimist": "^1.2.0",
     "mkdirp": "^0.5.1",
     "ncp": "^2.0.0",

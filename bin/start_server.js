@@ -19,7 +19,6 @@ module.exports = startServer
 function startServer ({
   tmpPrefix = 'penguin-build-',
   config,
-  prefix,
   viewDriver,
   databaseDriver,
   publishDriver,

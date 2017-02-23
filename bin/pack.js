@@ -1,5 +1,3 @@
-#!/usr/bin/env node
-
 'use strict'
 
 const crypto = require('crypto')
@@ -10,7 +8,6 @@ const glob = require('glob')
 const mkdirp = require('mkdirp')
 const loadJSON = require('load-json-file')
 const Bluebird = require('bluebird')
-const resolveMod = require('resolve')
 
 const renderIndexHTML = require('../pages/index')
 const render404HTML = require('../pages/404')
@@ -24,32 +21,11 @@ const readFileAsync = Bluebird.promisify(fs.readFile)
 
 module.exports = pack
 
-if (require.main === module) {
-  process.on('unhandledRejection', err => { throw err })
-  main(require('subarg')(process.argv.slice(2)))
-}
-
 const drivers = {
   pug: require('../pug')
 }
 
-function main (args) {
-  const { penguin: { languages } } = require(`${process.cwd()}/package.json`)
-  const viewEngine = args['view-engine'] || args.v
-  const basedir = args.basedir || args.b || process.cwd()
-  const transformArgs = args['transform'] || args.t
-  const transforms =
-    Array.isArray(transformArgs)
-      ? transformArgs
-      : (transformArgs ? [transformArgs] : [])
-  Promise.all(
-    transforms.map(a => createModuleFromArgs(a, { basedir }))
-  ).then(transforms =>
-    pack({ viewEngine, languages, transforms })
-  )
-}
-
-function pack ({ viewEngine = 'dust', languages, transforms }) {
+function pack ({ ext = 'dust', languages, transforms }) {
   mkdir('-p', 'files')
   mkdir('-p', 'static')
   mkdir('-p', '.penguin')
@@ -59,7 +35,7 @@ function pack ({ viewEngine = 'dust', languages, transforms }) {
   if (!test('-f', 'files/404.html')) {
     fs.writeFileSync('files/404.html', render404HTML({ languages }))
   }
-  const files = glob.sync('@(objects|pages)/*.' + viewEngine)
+  const files = glob.sync('@(objects|pages)/*.' + ext)
   return Promise.all([
     createComponentMap({
       browser: true,
@@ -102,7 +78,7 @@ function pack ({ viewEngine = 'dust', languages, transforms }) {
           mkdirpAsync(dirname(htmlOutput)).then(() =>
             readFileAsync(file)
           ).then(source => {
-            const driver = drivers[viewEngine]
+            const driver = drivers[ext]
             const code = compileTemplate(source, {
               scriptPath: filesRuntimes[i][0],
               productionScriptPath: filesRuntimes[i][1],
@@ -116,22 +92,6 @@ function pack ({ viewEngine = 'dust', languages, transforms }) {
           })
         ])
       })
-    )
+    ).then(() => {})  // Clear output
   )
-}
-
-function createModuleFromArgs (a, opts) {
-  const name = a._[0]
-  const args = Object.assign({}, a, { _: a._.slice(1) })
-  return createModule(name, opts, args)
-}
-
-function createModule (mod, opts, ...args) {
-  return new Promise((resolve, reject) => {
-    resolveMod(mod, opts, (err, p) => {
-      if (err) return reject(err)
-      const constructor = require(p)
-      resolve(constructor(...args))
-    })
-  })
 }

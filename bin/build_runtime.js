@@ -6,6 +6,7 @@ const { extname, relative } = require('path')
 const { rollup } = require('rollup')
 const rollupMiddleware = require('rollup-middleware')
 const cheerio = require('cheerio')
+const minimatch = require('minimatch')
 
 const compileTemplate = require('../lib/penguin_template')
 
@@ -84,7 +85,7 @@ function createPlugins ({
   penguinEnv = 'development'
 }) {
   const isTemplate = id =>
-    id.match(new RegExp(`^${process.cwd()}/(pages|objects)/.+${ext}$`))
+    minimatch(relative(process.cwd(), id), '@(pages|objects)/*.pug')
   const driver = drivers[ext.slice(1)]
   return [
     ...transforms,
