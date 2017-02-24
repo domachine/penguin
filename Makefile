@@ -5,6 +5,12 @@ MODULES = \
 	save_button.js \
 	saved_indicator.js
 
+LIBS = $(wildcard src/lib/*.js) src/actions.js src/selectors.js
+
+index.js: src/index.js $(LIBS)
+	@echo "Makefile: build module $@"
+	@rollup -c rollup.config.js $< >$@
+
 %.js: src/%.js
 	@echo "Makefile: build module $@"
 	@rollup -c rollup.config.js $< >$@
