@@ -1,6 +1,13 @@
 import { createStore } from 'redux'
 
-import { SAVE, SAVE_FAILURE, SAVE_SUCCESS } from '../actions'
+import {
+  SAVE,
+  SAVE_FAILURE,
+  SAVE_SUCCESS,
+  PUBLISH,
+  PUBLISH_FAILURE,
+  PUBLISH_SUCCESS
+} from '../actions'
 import {
   globalFields,
   globalNoLangFields,
@@ -43,6 +50,12 @@ export default function createClientRuntime ({ components }) {
                   .filter(h => h && typeof h.destroy === 'function')
                   .forEach(h => h.destroy())
                 destroy(store, callback)
+              },
+              publish (callback) {
+                hooks
+                  .filter(h => h && typeof h.publish === 'function')
+                  .forEach(h => h.publish())
+                publish(store, callback)
               }
             }
             : null
@@ -116,6 +129,22 @@ function save (store, callback = () => {}) {
     noLang: localNoLangFields(state),
     language
   }, sync)
+}
+
+function publish (store, callback = () => {}) {
+  const xhr = new window.XMLHttpRequest()
+  xhr.open('POST', '/api/v1/publish', true)
+  xhr.onerror = () => store.dispatch({ PUBLISH_FAILURE, error: xhr })
+  xhr.onload = () => {
+    if ((xhr.status / 100 | 0) !== 2) {
+      callback(xhr)
+      return store.dispatch({ type: PUBLISH_FAILURE, error: xhr })
+    }
+    callback()
+    store.dispatch({ type: PUBLISH_SUCCESS })
+  }
+  store.dispatch({ type: PUBLISH })
+  xhr.send()
 }
 
 function destroy (store, callback = () => {}) {
