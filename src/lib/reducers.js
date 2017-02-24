@@ -5,6 +5,9 @@ import {
   SAVE,
   SAVE_SUCCESS,
   SAVE_FAILURE,
+  PUBLISH,
+  PUBLISH_SUCCESS,
+  PUBLISH_FAILURE,
   HYDRATE
 } from '../actions'
 
@@ -14,6 +17,7 @@ export default combineReducers({
   globals,
   languages,
   isSaving,
+  isPublishing,
   error
 })
 
@@ -67,10 +71,24 @@ function isSaving (state = false, action) {
   }
 }
 
+function isPublishing (state = false, action) {
+  switch (action.type) {
+    case PUBLISH:
+      return true
+    case PUBLISH_SUCCESS:
+    case PUBLISH_FAILURE:
+      return false
+    default:
+      return state
+  }
+}
+
 function error (state = null, action) {
   switch (action.type) {
+    case PUBLISH_SUCCESS:
     case SAVE_SUCCESS:
       return null
+    case PUBLISH_FAILURE:
     case SAVE_FAILURE:
       return action.error
     default:
