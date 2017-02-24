@@ -3,6 +3,9 @@ export const UPDATE_FIELDS = 'UPDATE_FIELDS'
 export const SAVE = 'SAVE'
 export const SAVE_SUCCESS = 'SAVE_SUCCESS'
 export const SAVE_FAILURE = 'SAVE_FAILURE'
+export const PUBLISH = 'PUBLISH'
+export const PUBLISH_SUCCESS = 'PUBLISH_SUCCESS'
+export const PUBLISH_FAILURE = 'PUBLISH_FAILURE'
 
 export function update (update) {
   return { type: UPDATE_FIELDS, update }
