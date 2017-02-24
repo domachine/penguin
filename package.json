@@ -4,7 +4,8 @@
   "description": "This is a simple building chain for a CMS.",
   "main": "index.js",
   "bin": {
-    "penguin": "bin/penguin.js"
+    "penguin": "bin/penguin.js",
+    "penguin-passwordless": "bin/passwordless.js"
   },
   "scripts": {
     "watch": "watch 'make js' src",
