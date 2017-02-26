@@ -25,7 +25,7 @@ const drivers = {
   pug: require('../pug')
 }
 
-function pack ({ ext = 'dust', languages, transforms }) {
+function pack ({ ext = 'dust', config: { languages }, transforms }) {
   mkdir('-p', 'files')
   mkdir('-p', 'static')
   mkdir('-p', '.penguin')
