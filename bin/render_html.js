@@ -50,12 +50,12 @@ function error (msg) {
   process.exit(1)
 }
 
-function createOutputStream ({ databaseDriver, config, output = 'build' }) {
+function createOutputStream ({ databaseDriver, config, buildDir }) {
   const writer = createHTMLWriter({ config })
   return new Writable({
     objectMode: true,
     write (chunk, enc, callback) {
-      const path = join(output, chunk.key)
+      const path = join(buildDir, chunk.key)
       Promise.all([
         readFileAsync(chunk.template + '.html').catch(() => null),
         loadJSONSafe(chunk.template + '.json'),
