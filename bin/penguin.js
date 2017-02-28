@@ -53,7 +53,7 @@ if (!Array.isArray(pkg.languages)) {
       }
     })
     .catch(err => {
-      console.error('penguin-%s: %s', process.argv[2], err.message)
+      console.error('penguin-%s: %s', process.argv[2], err.stack)
       process.exit(1)
     })
 }
