@@ -14,7 +14,7 @@ module.exports = serve
 
 function serve ({
   staticPrefix = 'static',
-  ext = 'dust',
+  ext = 'pug',
   config,
   middleware = [],
   transforms = [],
