@@ -1,9 +1,4 @@
-MODULES = \
-	index.js \
-	inplace.js \
-	link.js \
-	save_button.js \
-	saved_indicator.js
+MODULES = index.js
 
 LIBS = $(wildcard src/lib/*.js) src/actions.js src/selectors.js
 

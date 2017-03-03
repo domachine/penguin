@@ -1,4 +1,5 @@
 module.exports = {
+  external: ['redux'],
   format: 'es',
   plugins: [
     require('rollup-plugin-node-resolve')({ preferBuiltins: false }),
