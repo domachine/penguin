@@ -60,8 +60,7 @@ export default function createClientRuntime ({ components }) {
             }
             : null
         )
-        const propsStr = decodeURIComponent(el.getAttribute('data-props') || '{}')
-        const props = JSON.parse(propsStr)
+        const props = JSON.parse(el.getAttribute('data-props') || '{}')
         hooks.push(component(ctx, props, el))
       }
     })
