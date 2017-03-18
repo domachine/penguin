@@ -22,7 +22,8 @@ const readFileAsync = Bluebird.promisify(fs.readFile)
 module.exports = pack
 
 const drivers = {
-  pug: require('../pug')
+  pug: require('../pug'),
+  html: require('../html')
 }
 
 function pack ({ ext = 'pug', config: { languages }, transforms }) {

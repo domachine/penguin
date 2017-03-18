@@ -18,7 +18,8 @@ if (require.main === module) {
 }
 
 const drivers = {
-  pug: require('../pug')
+  pug: require('../pug'),
+  html: require('../html')
 }
 
 function main (args) {
@@ -85,7 +86,7 @@ function createPlugins ({
   penguinEnv = 'development'
 }) {
   const isTemplate = id =>
-    minimatch(relative(process.cwd(), id), '@(pages|objects)/*.pug')
+    minimatch(relative(process.cwd(), id), `@(pages|objects)/*${ext}`)
   const driver = drivers[ext.slice(1)]
   return [
     ...transforms,
