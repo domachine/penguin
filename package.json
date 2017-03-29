@@ -24,7 +24,7 @@
   },
   "keywords": [],
   "author": "Dominik Burgdörfer <db@domachine.de> (https://domachine.de/)",
-  "license": "ISC",
+  "license": "MIT",
   "dependencies": {
     "babel-plugin-external-helpers": "^6.22.0",
     "babel-preset-es2015": "^6.22.0",
