@@ -113,11 +113,11 @@ module.exports = ({ url, ssl = false }) => {
       return s
     },
 
-    getObjects ({ language = '*', type = '*' }) {
+    getObjects ({ language }) {
       const statement =
         language === undefined
-          ? `SELECT fields FROM objects != 'not_localized'`
-          : 'SELECT fields FROM pages WHERE language = $1'
+          ? `SELECT * FROM objects WHERE language != 'not_localized'`
+          : 'SELECT * FROM objects WHERE language = $1'
       const params = language === undefined ? [] : [language]
       const s = new PassThrough({ objectMode: true })
       pool.connect((err, client, done) => {
