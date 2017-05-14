@@ -56,7 +56,7 @@ function createObjectStream ({ databaseDriver, languages }) {
       objectMode: true,
       transform (chunk, enc, callback) {
         const { object: { type, id }, language } = chunk
-        if (!sent[type]) sent[type] = {}
+        if (!sent[type]) sent[type] = new Set([])
         if (!sent[type][id]) sent[type][id] = new Set([language])
         else sent[type].add(language)
         callback(null, Object.assign({}, chunk, {
