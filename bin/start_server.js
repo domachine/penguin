@@ -30,14 +30,14 @@ function startServer ({
   const app = express()
   middleware.forEach(m => app.use(m))
   app.use('/static', viewDriver.static)
-  app.put('/:language.json', bodyParser(), (req, res, next) => {
+  app.put('/:language.json', bodyParser({ limit: '5mb' }), (req, res, next) => {
     const language =
       req.params.language === 'not_localized' ? null : req.params.language
     if (language && !langIndex.has(language)) return res.sendStatus(400)
     databaseDriver.saveGlobals(req.body, { language })
       .then(() => res.send(req.body), next)
   })
-  app.put('/:language/:name.json', bodyParser(), (req, res, next) => {
+  app.put('/:language/:name.json', bodyParser({ limit: '5mb' }), (req, res, next) => {
     const { name } = req.params
     const language =
       req.params.language === 'not_localized' ? null : req.params.language
@@ -45,7 +45,7 @@ function startServer ({
     databaseDriver.savePage(req.body, { language, name })
       .then(() => res.send(req.body), next)
   })
-  app.put('/:language/:type/:id.json', bodyParser(), (req, res, next) => {
+  app.put('/:language/:type/:id.json', bodyParser({ limit: '5mb' }), (req, res, next) => {
     const { type, id } = req.params
     const language =
       req.params.language === 'not_localized' ? null : req.params.language
