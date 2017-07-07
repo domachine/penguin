@@ -1,6 +1,6 @@
 {
   "name": "penguin.js",
-  "version": "1.0.0-rc.20",
+  "version": "1.0.0-rc.21",
   "description": "This is a simple building chain for a CMS.",
   "module": "index.js",
   "bin": {
