@@ -17,12 +17,19 @@ module.exports = args => {
       // Checkout repository
       fs.mkdtemp('penguin-git-clone-', (err, path) => {
         if (err) return reject(err)
-        execFile(git, {maxBuffer: 1024 * 1024}, [
-          'clone', '--no-checkout',
-          '--depth', '1',
-          '--branch', branch,
-          url, path
-        ],
+        execFile(
+          git,
+          { maxBuffer: 1024 * 1024 },
+          [
+            'clone',
+            '--no-checkout',
+            '--depth',
+            '1',
+            '--branch',
+            branch,
+            url,
+            path
+          ],
           err => {
             if (err) return reject(err)
             rimraf(join(output, '.git'), err => {
@@ -35,32 +42,48 @@ module.exports = args => {
                 })
               })
             })
-          })
+          }
+        )
       })
-    })
-    .then(() => {
+    }).then(() => {
       return new Promise((resolve, reject) => {
         spawn(git, ['add', '.'], { stdio: 'inherit', cwd: output })
-          .on('error', reject).on('close', code => {
+          .on('error', reject)
+          .on('close', code => {
             if (code !== 0) return reject(new Error(code))
             commit()
           })
-        function commit () {
-          execFile(git, {maxBuffer: 1024 * 1024}, [
-            '-c', 'user.name=Penguin',
-            '-c', 'user.email=<>',
-            'commit',
-            '-m', 'Update content from penguin.js'
-          ], { cwd: output }, err => {
-            if (err && err.code !== 1) return reject(err)
-            push()
-          })
+        function commit() {
+          execFile(
+            git,
+            { maxBuffer: 1024 * 1024 },
+            [
+              '-c',
+              'user.name=Penguin',
+              '-c',
+              'user.email=<>',
+              'commit',
+              '-m',
+              'Update content from penguin.js'
+            ],
+            { cwd: output },
+            err => {
+              if (err && err.code !== 1) return reject(err)
+              push()
+            }
+          )
         }
-        function push () {
-          execFile(git, {maxBuffer: 1024 * 1024}, ['push', url, branch], { cwd: output }, err => {
-            if (err) return reject(err)
-            resolve()
-          })
+        function push() {
+          execFile(
+            git,
+            { maxBuffer: 1024 * 1024 },
+            ['push', url, branch],
+            { cwd: output },
+            err => {
+              if (err) return reject(err)
+              resolve()
+            }
+          )
         }
       })
     })
