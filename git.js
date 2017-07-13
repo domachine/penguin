@@ -19,7 +19,6 @@ module.exports = args => {
         if (err) return reject(err)
         execFile(
           git,
-          { maxBuffer: 1024 * 1024 },
           [
             'clone',
             '--no-checkout',
@@ -56,13 +55,13 @@ module.exports = args => {
         function commit() {
           execFile(
             git,
-            { maxBuffer: 1024 * 1024 },
             [
               '-c',
               'user.name=Penguin',
               '-c',
               'user.email=<>',
               'commit',
+              '--quiet',
               '-m',
               'Update content from penguin.js'
             ],
@@ -74,16 +73,10 @@ module.exports = args => {
           )
         }
         function push() {
-          execFile(
-            git,
-            { maxBuffer: 1024 * 1024 },
-            ['push', url, branch],
-            { cwd: output },
-            err => {
-              if (err) return reject(err)
-              resolve()
-            }
-          )
+          execFile(git, ['push', url, branch], { cwd: output }, err => {
+            if (err) return reject(err)
+            resolve()
+          })
         }
       })
     })
