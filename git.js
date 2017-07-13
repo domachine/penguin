@@ -17,7 +17,7 @@ module.exports = args => {
       // Checkout repository
       fs.mkdtemp('penguin-git-clone-', (err, path) => {
         if (err) return reject(err)
-        execFile(git, [
+        execFile(git, {maxBuffer: 1024 * 1024}, [
           'clone', '--no-checkout',
           '--depth', '1',
           '--branch', branch,
@@ -46,7 +46,7 @@ module.exports = args => {
             commit()
           })
         function commit () {
-          execFile(git, [
+          execFile(git, {maxBuffer: 1024 * 1024}, [
             '-c', 'user.name=Penguin',
             '-c', 'user.email=<>',
             'commit',
@@ -57,7 +57,7 @@ module.exports = args => {
           })
         }
         function push () {
-          execFile(git, ['push', url, branch], { cwd: output }, err => {
+          execFile(git, {maxBuffer: 1024 * 1024}, ['push', url, branch], { cwd: output }, err => {
             if (err) return reject(err)
             resolve()
           })
